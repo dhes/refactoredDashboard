@@ -451,10 +451,10 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Smoking Status Card - Always visible */}
-      <div className="mb-4 p-4 bg-white shadow rounded">
-        <h2 className="text-xl font-semibold mb-2">🚭 Smoking Status</h2>
-        {smokingStatus ? (
+      {/*Smoking Status Card - Always visible*/}
+      {/* <div className="mb-4 p-4 bg-white shadow rounded">
+        <h2 className="text-xl font-semibold mb-2">🚭 Smoking Status</h2> */}
+        {/* {smokingStatus ? (
           <div>
             <p className="text-lg">
               {smokingStatus.valueCodeableConcept?.coding?.[0]?.display ||
@@ -467,10 +467,10 @@ const Dashboard = () => {
           </div>
         ) : (
           <p className="text-gray-500 italic">No smoking history on file</p>
-        )}
+        )} */}
 
         {/* Optional: Add an update button if status is old or missing */}
-        {(!smokingStatus ||
+        {/* {(!smokingStatus ||
           (smokingStatus.effectiveDateTime &&
             new Date(smokingStatus.effectiveDateTime) <
               new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))) && (
@@ -483,8 +483,8 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Debug info - remove after testing */}
-      <div className="mb-2 p-2 bg-gray-100 text-xs">
+      Debug info - remove after testing */}
+      {/* <div className="mb-2 p-2 bg-gray-100 text-xs">
         Debug: showSmokingStatusPrompt = {String(showSmokingStatusPrompt)}, hasSmokingObs ={" "}
         {String(!!latestSmokingObservation)}, effectiveDate ={" "}
         {latestSmokingObservation?.effectiveDateTime || "none"}
@@ -533,10 +533,40 @@ const Dashboard = () => {
           onSubmit={() => setShowSmokingForm(false)}
           onCancel={() => setShowSmokingForm(false)}
         />
-      )}
+      )} */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {/* Smoking Status Prompt, shown if needed */}
+        <Card>
+          <h3 className="font-semibold text-lg mb-2">🚭 Smoking Status</h3>
+          {smokingStatus ? (
+            <div>
+              <p className="text-lg">
+                {smokingStatus.valueCodeableConcept?.coding?.[0]?.display ||
+                  smokingStatus.valueCodeableConcept?.text ||
+                  "Unknown status"}
+              </p>
+              <p className="text-sm text-gray-600 mt-1">
+                Last updated: {smokingStatus.effectiveDateTime?.slice(0, 10) || "Date unknown"}
+              </p>
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No smoking history on file</p>
+          )}
+
+          {/* Optional: Add an update button if status is old or missing */}
+          {(!smokingStatus ||
+            (smokingStatus.effectiveDateTime &&
+              new Date(smokingStatus.effectiveDateTime) <
+                new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))) && (
+            <button
+              onClick={() => setShowSmokingForm(true)}
+              className="mt-3 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Update Smoking Status
+            </button>
+          )}
+        </Card>{" "}
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">⚠️ Allergies</h2>
@@ -554,7 +584,6 @@ const Dashboard = () => {
             </ul>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">🩺 Conditions</h2>
@@ -571,7 +600,6 @@ const Dashboard = () => {
             </ul>
           </CardContent>
         </Card>
-
         <MuiCard>
           <MuiCardContent>
             <Typography variant="h6" gutterBottom>
@@ -596,7 +624,6 @@ const Dashboard = () => {
             </List>
           </MuiCardContent>
         </MuiCard>
-
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">🧪 Labs</h2>
@@ -618,7 +645,6 @@ const Dashboard = () => {
             </ul>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">🧾 Procedures</h2>
@@ -674,7 +700,6 @@ const Dashboard = () => {
             </ul>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">💉 Immunizations</h2>
@@ -693,7 +718,6 @@ const Dashboard = () => {
             </ul>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">👪 Family History</h2>
