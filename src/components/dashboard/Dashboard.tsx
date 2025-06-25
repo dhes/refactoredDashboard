@@ -27,6 +27,14 @@ import { useProcedures } from "../../hooks/useProcedures";
 import { useLabs } from "../../hooks/useLabs";
 import { useSmokingStatus } from "../../hooks/useSmokingStatus";
 
+// Helper function - add this outside the component or as a util
+function getPopulationValue(group: any, populationType: string): boolean {
+  const population = group.population?.find(
+    (pop: any) => pop.code?.coding?.[0]?.code === populationType
+  );
+  return population?.count > 0;
+}
+
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
   const [selectedPatientId, setSelectedPatientId] = useState<string>("minimal-test");
@@ -46,7 +54,10 @@ const Dashboard = () => {
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
   const { patient, loading: patientLoading, error: patientError } = usePatient(selectedPatientId);
   // const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
-  const { measureReport, loading, error } = useMeasureReport(selectedPatientId, 'CMS138FHIRPreventiveTobaccoCessation');
+  const { measureReport, loading, error } = useMeasureReport(
+    selectedPatientId,
+    "CMS138FHIRPreventiveTobaccoCessation"
+  );
   // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
   const { encounters, hasRecentEncounter, loading: encLoading } = useEncounters(selectedPatientId);
   const { allergies, loading: allergiesLoading } = useAllergies(selectedPatientId);
@@ -314,7 +325,7 @@ const Dashboard = () => {
     if (!coding || coding.length === 0) return "Unknown";
     return coding[0].display || coding[0].code || "Unknown";
   };
-console.log('measureReport:', measureReport);
+  console.log("measureReport:", measureReport);
   // Your return statement...
   return (
     <>
@@ -341,7 +352,16 @@ console.log('measureReport:', measureReport);
       )*/}
       {measureReport && (
         <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
-          <h2 className="text-xl font-semibold mb-2">📊 Tobacco Cessation Measure Report</h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
+            <button
+              onClick={() => setShowDeveloperView(!showDeveloperView)}
+              className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
+            >
+              {showDeveloperView ? "Practitioner View" : "Developer View"}
+            </button>
+          </div>
+
           <p className="mb-2">
             <strong>Status:</strong> {measureReport.status}
           </p>
@@ -349,18 +369,75 @@ console.log('measureReport:', measureReport);
             <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)} to{" "}
             {measureReport.period?.end?.slice(0, 10)}
           </p>
-          {measureReport.group?.map((group: any, i: number) => (
-            <div key={i} className="mb-2">
-              <h3 className="font-bold">Group {i + 1}</h3>
-              <ul className="ml-4 list-disc">
-                {group.population?.map((pop: any, j: number) => (
-                  <li key={j}>
-                    {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+
+          {showDeveloperView ? (
+            // Developer View - Original display
+            <>
+              {measureReport.group?.map((group: any, i: number) => (
+                <div key={i} className="mb-2">
+                  <h3 className="font-bold">Group {i + 1}</h3>
+                  <ul className="ml-4 list-disc">
+                    {group.population?.map((pop: any, j: number) => (
+                      <li key={j}>
+                        {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </>
+          ) : (
+            // Practitioner View - User-friendly display
+            <>
+              {/* Group 1: Tobacco History */}
+              {measureReport.group?.[0] && (
+                <div className="mb-4 p-3 bg-white rounded">
+                  <h3 className="font-bold mb-2">#1 Tobacco History Documentation</h3>
+                  <div className="space-y-1">
+                    <p>
+                      • Should have tobacco history:{" "}
+                      {getPopulationValue(measureReport.group[0], "denominator") ? "✓ Yes" : "✗ No"}
+                    </p>
+                    <p>
+                      • Excluded from tobacco history:{" "}
+                      {getPopulationValue(measureReport.group[0], "denominator-exclusion")
+                        ? "✓ Yes"
+                        : "✗ No"}
+                    </p>
+                    <p>
+                      • Has tobacco history in current year:{" "}
+                      {getPopulationValue(measureReport.group[0], "numerator") ? "✓ Yes" : "✗ No"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Group 2: Tobacco Intervention */}
+              {measureReport.group?.[1] && (
+                <div className="mb-4 p-3 bg-white rounded">
+                  <h3 className="font-bold mb-2">#2 Tobacco Intervention</h3>
+                  <div className="space-y-1">
+                    <p>
+                      • Should have tobacco intervention:{" "}
+                      {getPopulationValue(measureReport.group[1], "denominator") ? "✓ Yes" : "✗ No"}
+                    </p>
+                    <p>
+                      • Excluded from tobacco intervention:{" "}
+                      {getPopulationValue(measureReport.group[1], "denominator-exclusion")
+                        ? "✓ Yes"
+                        : "✗ No"}
+                    </p>
+                    <p>
+                      • Got tobacco intervention:{" "}
+                      {getPopulationValue(measureReport.group[1], "numerator") ? "✓ Yes" : "✗ No"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Show encounter prompt if no qualifying encounters */}
           {measureReport?.group?.every((group: any) =>
             group.population.every((pop: any) => pop.count === 0)
           ) && (
@@ -378,7 +455,7 @@ console.log('measureReport:', measureReport);
             </div>
           )}
         </div>
-      )}
+      )}{" "}
       {showEncounterForm && (
         <div className="mb-4 p-4 border rounded bg-white shadow">
           <h3 className="text-lg font-semibold mb-2">📝 New Encounter Form</h3>
@@ -452,11 +529,10 @@ console.log('measureReport:', measureReport);
           <p>Gender: {patient.gender}</p>
         </div>
       )}
-
       {/*Smoking Status Card - Always visible*/}
       {/* <div className="mb-4 p-4 bg-white shadow rounded">
         <h2 className="text-xl font-semibold mb-2">🚭 Smoking Status</h2> */}
-        {/* {smokingStatus ? (
+      {/* {smokingStatus ? (
           <div>
             <p className="text-lg">
               {smokingStatus.valueCodeableConcept?.coding?.[0]?.display ||
@@ -470,9 +546,8 @@ console.log('measureReport:', measureReport);
         ) : (
           <p className="text-gray-500 italic">No smoking history on file</p>
         )} */}
-
-        {/* Optional: Add an update button if status is old or missing */}
-        {/* {(!smokingStatus ||
+      {/* Optional: Add an update button if status is old or missing */}
+      {/* {(!smokingStatus ||
           (smokingStatus.effectiveDateTime &&
             new Date(smokingStatus.effectiveDateTime) <
               new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))) && (
@@ -536,7 +611,6 @@ console.log('measureReport:', measureReport);
           onCancel={() => setShowSmokingForm(false)}
         />
       )} */}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {/* Smoking Status Prompt, shown if needed */}
         <Card>
