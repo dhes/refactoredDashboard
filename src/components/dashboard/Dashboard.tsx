@@ -1,31 +1,31 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent } from '../ui/card';
-import { usePatient } from '../../hooks/usePatient';
-import { useMeasureReports } from '../../hooks/useMeasureReports';
-import { useObservations } from '../../hooks/useObservations';
-import { useEncounters } from '../../hooks/useEncounters';
-import { useAvailablePatients } from '../../hooks/useAvailablePatients';
-import { fhirClient } from '../../services/fhirClient';
-import SmokingStatusForm from '../forms/SmokingStatusForm';
-import { useAllergies } from '../../hooks/useAllergies';
-import type { AllergyIntolerance, Condition, Procedure, Observation } from '../../types/fhir';
-import { useConditions } from '../../hooks/useConditions';
-import { 
-  Card as MuiCard, 
+import React, { useState, useEffect, useMemo } from "react";
+import { Card, CardContent } from "../ui/card";
+import { usePatient } from "../../hooks/usePatient";
+import { useMeasureReports } from "../../hooks/useMeasureReports";
+import { useObservations } from "../../hooks/useObservations";
+import { useEncounters } from "../../hooks/useEncounters";
+import { useAvailablePatients } from "../../hooks/useAvailablePatients";
+import { fhirClient } from "../../services/fhirClient";
+import SmokingStatusForm from "../forms/SmokingStatusForm";
+import { useAllergies } from "../../hooks/useAllergies";
+import type { AllergyIntolerance, Condition, Procedure, Observation } from "../../types/fhir";
+import { useConditions } from "../../hooks/useConditions";
+import {
+  Card as MuiCard,
   CardContent as MuiCardContent,
   Typography,
   List,
   ListItem,
   ListItemText,
-  Divider
-} from '@mui/material';
-import type { MedicationStatement } from '../../types/fhir';
-import { useMedications } from '../../hooks/useMedications';
-import { useFamilyHistory } from '../../hooks/useFamilyHistory';
-import { useImmunizations } from '../../hooks/useImmunizations';
-import { useProcedures } from '../../hooks/useProcedures';
-import { useLabs } from '../../hooks/useLabs';
-
+  Divider,
+} from "@mui/material";
+import type { MedicationStatement } from "../../types/fhir";
+import { useMedications } from "../../hooks/useMedications";
+import { useFamilyHistory } from "../../hooks/useFamilyHistory";
+import { useImmunizations } from "../../hooks/useImmunizations";
+import { useProcedures } from "../../hooks/useProcedures";
+import { useLabs } from "../../hooks/useLabs";
+import { useSmokingStatus } from "../../hooks/useSmokingStatus";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -33,7 +33,9 @@ const Dashboard = () => {
   // const [showEncounterForm, setShowEncounterForm] = useState<boolean>(false);
   // Add all the form-related state
   const [showEncounterForm, setShowEncounterForm] = useState<boolean>(false);
-  const [encounterDate, setEncounterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [encounterDate, setEncounterDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
   const [icd10, setIcd10] = useState<string>("");
   const [cpt, setCpt] = useState<string>("");
   const [showSmokingStatusPrompt, setShowSmokingStatusPrompt] = useState<boolean>(false);
@@ -43,7 +45,7 @@ const Dashboard = () => {
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
   const { patient, loading: patientLoading, error: patientError } = usePatient(selectedPatientId);
   const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
-  const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
+  // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
   const { encounters, hasRecentEncounter, loading: encLoading } = useEncounters(selectedPatientId);
   const { allergies, loading: allergiesLoading } = useAllergies(selectedPatientId);
   const { conditions, loading: conditionsLoading } = useConditions(selectedPatientId);
@@ -52,152 +54,207 @@ const Dashboard = () => {
   const { immunizations, loading: immunizationsLoading } = useImmunizations(selectedPatientId);
   const { procedures, loading: proceduresLoading } = useProcedures(selectedPatientId);
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
+  const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
 
-// Add this with your other logic, after the hooks
-const psaReminder = useMemo(() => {
-  if (!patient || !observations) return "";
-  
-  // Check if patient needs PSA test
-  const age = patient.birthDate ? 
-    new Date().getFullYear() - new Date(patient.birthDate).getFullYear() : 0;
-  
-  const isMale = patient.gender === 'male';
-  
-  // Check for recent PSA test (you'll need to adjust the code based on your PSA observation codes)
-  const recentPSA = observations.some(obs => {
-    const isPSA = obs.code?.coding?.some(c => 
-      c.code === '2857-1' && c.system === 'http://loinc.org' // LOINC code for PSA
-    );
-    if (!isPSA) return false;
-    
-    const obsDate = new Date(obs.effectiveDateTime || '');
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    
-    return obsDate > oneYearAgo;
-  });
-  
-  // PSA screening typically recommended for men over 50
-  if (isMale && age >= 50 && !recentPSA) {
-    return "Order PSA Test: Patient has not had a PSA test in the past year";
-  }
-  
-  return "";
-}, [patient, observations]);
+  // Add this with your other logic, after the hooks
+  // const psaReminder = useMemo(() => {
+  //   if (!patient || !observations) return "";
+
+  //   // Check if patient needs PSA test
+  //   const age = patient.birthDate ?
+  //     new Date().getFullYear() - new Date(patient.birthDate).getFullYear() : 0;
+
+  //   const isMale = patient.gender === 'male';
+
+  //   // Check for recent PSA test (you'll need to adjust the code based on your PSA observation codes)
+  //   const recentPSA = observations.some(obs => {
+  //     const isPSA = obs.code?.coding?.some(c =>
+  //       c.code === '2857-1' && c.system === 'http://loinc.org' // LOINC code for PSA
+  //     );
+  //     if (!isPSA) return false;
+
+  //     const obsDate = new Date(obs.effectiveDateTime || '');
+  //     const oneYearAgo = new Date();
+  //     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  //     return obsDate > oneYearAgo;
+  //   });
+
+  //   // PSA screening typically recommended for men over 50
+  //   if (isMale && age >= 50 && !recentPSA) {
+  //     return "Order PSA Test: Patient has not had a PSA test in the past year";
+  //   }
+
+  //   return "";
+  // }, [patient, observations]);
 
   // Get the latest smoking observation
-  const latestSmokingObservation = observations
-    .filter(obs => obs.code?.coding?.some(c => 
-      c.code === '72166-2' && c.system === 'http://loinc.org'
-    ))
-    .sort((a, b) => {
-      const dateA = a.effectiveDateTime || '';
-      const dateB = b.effectiveDateTime || '';
-      return dateB.localeCompare(dateA);
-    })[0]
+  const latestSmokingObservation = smokingStatus;
+  // NOW you can do the console.log
+  console.log("Smoking status data:", {
+    smokingStatus,
+    allSmokingObs,
+    selectedPatientId,
+    latestSmokingObservation,
+  });
+  // .filter(obs => obs.code?.coding?.some(c =>
+  //   c.code === '72166-2' && c.system === 'http://loinc.org'
+  // ))
+  // .sort((a, b) => {
+  //   const dateA = a.effectiveDateTime || '';
+  //   const dateB = b.effectiveDateTime || '';
+  //   return dateB.localeCompare(dateA);
+  // })[0]
+
+  // Add the debug useEffect here
+  // Update your debug code to also log smokingStatus from the hook
+  // useEffect(() => {
+  //   const smokingObs = observations.filter(obs =>
+  //     obs.code?.coding?.some(c =>
+  //       c.code === '72166-2' && c.system === 'http://loinc.org'
+  //     )
+  //   );
+  //   console.log('All observations count:', observations.length);
+  //   console.log('All smoking observations:', smokingObs);
+  //   console.log('Latest smoking observation:', latestSmokingObservation);
+  //   console.log('Smoking status from hook:', smokingStatus); // Add this
+  // }, [observations, latestSmokingObservation, smokingStatus]);
 
   const formatQuantity = (quantity: any): string => {
-  if (!quantity) return '';
-  const value = quantity.value || '';
-  const unit = quantity.unit || quantity.code || '';
-  return `${value} ${unit}`.trim();
-};
+    if (!quantity) return "";
+    const value = quantity.value || "";
+    const unit = quantity.unit || quantity.code || "";
+    return `${value} ${unit}`.trim();
+  };
 
-// Add the handler for "No Change" button
+  // Add the handler for "No Change" button
   const handleNoChangeSmokingStatus = async (previousObservation: any) => {
     try {
       // Create a new observation with today's date but same value
       const newObservation = {
-        resourceType: 'Observation' as const,
-        status: 'final' as const,
+        resourceType: "Observation" as const,
+        status: "final" as const,
         code: previousObservation.code,
         subject: {
-          reference: `Patient/${selectedPatientId}`
+          reference: `Patient/${selectedPatientId}`,
         },
         effectiveDateTime: new Date().toISOString(),
-        valueCodeableConcept: previousObservation.valueCodeableConcept
+        valueCodeableConcept: previousObservation.valueCodeableConcept,
       };
-      
+
       await fhirClient.createObservation(newObservation);
-      
+
       // Close the prompt
       setShowSmokingStatusPrompt(false);
-      
+
       // TODO: Refresh observations to show the new one
-      
     } catch (error) {
-      console.error('Error updating smoking status:', error);
+      console.error("Error updating smoking status:", error);
     }
   };
-  
+
   // Check if smoking status prompt should be shown (example logic)
+  // useEffect(() => {
+  //   if (latestSmokingObservation) {
+  //     const lastRecordedDate = new Date(latestSmokingObservation.effectiveDateTime || "");
+  //     const oneYearAgo = new Date();
+  //     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  //     if (lastRecordedDate < oneYearAgo) {
+  //       setShowSmokingStatusPrompt(true);
+  //     }
+  //   }
+  // }, [latestSmokingObservation]);
+
+  // Update your useEffect to add more logging:
   useEffect(() => {
-    if (latestSmokingObservation) {
-      const lastRecordedDate = new Date(latestSmokingObservation.effectiveDateTime || '');
+    console.log("Smoking status check:", {
+      hasSmokingStatus: !!latestSmokingObservation,
+      effectiveDateTime: latestSmokingObservation?.effectiveDateTime,
+      showPrompt: showSmokingStatusPrompt,
+    });
+
+    if (latestSmokingObservation && latestSmokingObservation.effectiveDateTime) {
+      const lastRecordedDate = new Date(latestSmokingObservation.effectiveDateTime);
       const oneYearAgo = new Date();
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-      
+
+      console.log("Date comparison:", {
+        lastRecorded: lastRecordedDate.toISOString(),
+        oneYearAgo: oneYearAgo.toISOString(),
+        shouldShowPrompt: lastRecordedDate < oneYearAgo,
+      });
+
       if (lastRecordedDate < oneYearAgo) {
         setShowSmokingStatusPrompt(true);
       }
+    } else {
+      console.log("No smoking observation or no effectiveDateTime");
     }
   }, [latestSmokingObservation]);
 
-// Add the form submit handler
+  // Add the form submit handler
   const handleEncounterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Create the encounter using your FHIR client
       const encounter = {
-        resourceType: 'Encounter' as const,
-        status: 'finished' as const,
+        resourceType: "Encounter" as const,
+        status: "finished" as const,
         class: {
-          system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
-          code: 'AMB',
-          display: 'ambulatory'
+          system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          code: "AMB",
+          display: "ambulatory",
         },
-        type: [{
-          coding: [{
-            system: 'http://www.ama-assn.org/go/cpt',
-            code: cpt,
-            display: 'Selected CPT'
-          }]
-        }],
+        type: [
+          {
+            coding: [
+              {
+                system: "http://www.ama-assn.org/go/cpt",
+                code: cpt,
+                display: "Selected CPT",
+              },
+            ],
+          },
+        ],
         subject: {
-          reference: `Patient/${selectedPatientId}`
+          reference: `Patient/${selectedPatientId}`,
         },
         period: {
           start: encounterDate,
-          end: encounterDate
+          end: encounterDate,
         },
-        reasonCode: [{
-          coding: [{
-            system: 'http://hl7.org/fhir/sid/icd-10-cm',
-            code: icd10,
-            display: 'Selected ICD-10'
-          }]
-        }]
+        reasonCode: [
+          {
+            coding: [
+              {
+                system: "http://hl7.org/fhir/sid/icd-10-cm",
+                code: icd10,
+                display: "Selected ICD-10",
+              },
+            ],
+          },
+        ],
       };
-      
+
       // Import fhirClient at the top of your file
       await fhirClient.createEncounter(encounter);
-      
+
       // Reset form and close
       setShowEncounterForm(false);
       setIcd10("");
       setCpt("");
-      
+
       // TODO: Refresh the measure reports to show updated results
-      
     } catch (error) {
-      console.error('Error creating encounter:', error);
+      console.error("Error creating encounter:", error);
       // TODO: Show error message to user
     }
   };
 
   // NOW the combined loading state will work
-  const isLoading = patientLoading || reportsLoading || obsLoading || encLoading;
+  const isLoading = patientLoading || reportsLoading || encLoading;
 
   // Remove these duplicate/incomplete hook calls:
   // const { patient: hookPatient, loading: hookLoading } = usePatient(selectedPatientId);
@@ -209,53 +266,52 @@ const psaReminder = useMemo(() => {
   // Add these helper functions
   const getDisplayText = (code: any): string => {
     if (!code) return "Unknown";
-    return code.text || 
-           code.coding?.[0]?.display || 
-           code.coding?.[0]?.code || 
-           "Unknown";
+    return code.text || code.coding?.[0]?.display || code.coding?.[0]?.code || "Unknown";
   };
 
-// Add this helper function in Dashboard.tsx with your other helpers
-const groupProceduresByDate = (procedures: Procedure[]): Record<string, Procedure[]> => {
-  const grouped: Record<string, Procedure[]> = {};
-  
-  procedures.forEach((proc) => {
-    const date = proc.performedDateTime?.slice(0, 10) || 
-                 proc.performedPeriod?.start?.slice(0, 10) || 
-                 'Unknown Date';
-    
-    if (!grouped[date]) {
-      grouped[date] = [];
-    }
-    grouped[date].push(proc);
-  });
-  
-  return grouped;
-};
+  // Add this helper function in Dashboard.tsx with your other helpers
+  const groupProceduresByDate = (procedures: Procedure[]): Record<string, Procedure[]> => {
+    const grouped: Record<string, Procedure[]> = {};
 
-// Add this helper function with your other helpers
+    procedures.forEach((proc) => {
+      const date =
+        proc.performedDateTime?.slice(0, 10) ||
+        proc.performedPeriod?.start?.slice(0, 10) ||
+        "Unknown Date";
 
-const groupObservationsByDate = (observations: Observation[]): Record<string, Observation[]> => {
-  const grouped: Record<string, Observation[]> = {};
-  
-  observations.forEach((obs) => {
-    const date = obs.effectiveDateTime?.slice(0, 10) || 
-                 obs.effectivePeriod?.start?.slice(0, 10) || 
-                 'Unknown Date';
-    
-    if (!grouped[date]) {
-      grouped[date] = [];
-    }
-    grouped[date].push(obs);
-  });
-  
-  return grouped;
-};
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(proc);
+    });
 
-const getCodingDisplay = (coding?: any[]): string => {
-  if (!coding || coding.length === 0) return "Unknown";
-  return coding[0].display || coding[0].code || "Unknown";
-};
+    return grouped;
+  };
+
+  // Add this helper function with your other helpers
+
+  const groupObservationsByDate = (observations: Observation[]): Record<string, Observation[]> => {
+    const grouped: Record<string, Observation[]> = {};
+
+    observations.forEach((obs) => {
+      const date =
+        obs.effectiveDateTime?.slice(0, 10) ||
+        obs.effectivePeriod?.start?.slice(0, 10) ||
+        "Unknown Date";
+
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(obs);
+    });
+
+    return grouped;
+  };
+
+  const getCodingDisplay = (coding?: any[]): string => {
+    if (!coding || coding.length === 0) return "Unknown";
+    return coding[0].display || coding[0].code || "Unknown";
+  };
 
   // Your return statement...
   return (
@@ -274,12 +330,13 @@ const getCodingDisplay = (coding?: any[]): string => {
           ))}
         </select>
       </div>
+      {/* PSA Reminder - commented out for now
       {psaReminder && (
         <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
           <p className="font-semibold">🔔 Reminder</p>
           <p>{psaReminder}</p>
         </div>
-      )}
+      )*/}
       {measureReport && (
         <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
           <h2 className="text-xl font-semibold mb-2">📊 Tobacco Cessation Measure Report</h2>
@@ -393,53 +450,93 @@ const getCodingDisplay = (coding?: any[]): string => {
           <p>Gender: {patient.gender}</p>
         </div>
       )}
+
+      {/* Smoking Status Card - Always visible */}
+      <div className="mb-4 p-4 bg-white shadow rounded">
+        <h2 className="text-xl font-semibold mb-2">🚭 Smoking Status</h2>
+        {smokingStatus ? (
+          <div>
+            <p className="text-lg">
+              {smokingStatus.valueCodeableConcept?.coding?.[0]?.display ||
+                smokingStatus.valueCodeableConcept?.text ||
+                "Unknown status"}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              Last updated: {smokingStatus.effectiveDateTime?.slice(0, 10) || "Date unknown"}
+            </p>
+          </div>
+        ) : (
+          <p className="text-gray-500 italic">No smoking history on file</p>
+        )}
+
+        {/* Optional: Add an update button if status is old or missing */}
+        {(!smokingStatus ||
+          (smokingStatus.effectiveDateTime &&
+            new Date(smokingStatus.effectiveDateTime) <
+              new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))) && (
+          <button
+            onClick={() => setShowSmokingForm(true)}
+            className="mt-3 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Update Smoking Status
+          </button>
+        )}
+      </div>
+
+      {/* Debug info - remove after testing */}
+      <div className="mb-2 p-2 bg-gray-100 text-xs">
+        Debug: showSmokingStatusPrompt = {String(showSmokingStatusPrompt)}, hasSmokingObs ={" "}
+        {String(!!latestSmokingObservation)}, effectiveDate ={" "}
+        {latestSmokingObservation?.effectiveDateTime || "none"}
+      </div>
+      {showSmokingStatusPrompt && (
+        <div className="mb-4 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-800 rounded">
+          <p className="font-semibold mb-2">🚭 Smoking Status</p>
+          <p className="italic mb-2">
+            Last recorded smoking status:{" "}
+            {latestSmokingObservation?.effectiveDateTime?.slice(0, 10)} —{" "}
+            {latestSmokingObservation?.valueCodeableConcept?.text ??
+              latestSmokingObservation?.valueCodeableConcept?.coding?.[0]?.display}
+          </p>
+          <p>
+            The last documented smoking status is over a year old. Has anything changed in the
+            patient's tobacco use since then?
+          </p>
+          <div className="mt-2 space-x-2">
+            <button
+              onClick={() => handleNoChangeSmokingStatus(latestSmokingObservation)}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              No Change
+            </button>
+            <button
+              onClick={() => {
+                setShowSmokingStatusPrompt(false);
+                setShowSmokingForm(true);
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Yes — Update
+            </button>
+            <button
+              onClick={() => setShowSmokingStatusPrompt(false)}
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {showSmokingForm && (
+        <SmokingStatusForm
+          patientId={selectedPatientId}
+          onSubmit={() => setShowSmokingForm(false)}
+          onCancel={() => setShowSmokingForm(false)}
+        />
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {/* Smoking Status Prompt, shown if needed */}
-        {showSmokingStatusPrompt && (
-          <div className="mb-4 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-800 rounded">
-            <p className="font-semibold mb-2">🚭 Smoking Status</p>
-            <p className="italic mb-2">
-              Last recorded smoking status:{" "}
-              {latestSmokingObservation?.effectiveDateTime?.slice(0, 10)} —{" "}
-              {latestSmokingObservation?.valueCodeableConcept?.text ??
-                latestSmokingObservation?.valueCodeableConcept?.coding?.[0]?.display}
-            </p>
-            <p>
-              The last documented smoking status is over a year old. Has anything changed in the
-              patient's tobacco use since then?
-            </p>
-            <div className="mt-2 space-x-2">
-              <button
-                onClick={() => handleNoChangeSmokingStatus(latestSmokingObservation)}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                No Change
-              </button>
-              <button
-                onClick={() => {
-                  setShowSmokingStatusPrompt(false);
-                  setShowSmokingForm(true);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Yes — Update
-              </button>
-              <button
-                onClick={() => setShowSmokingStatusPrompt(false)}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-        {showSmokingForm && (
-          <SmokingStatusForm
-            patientId={selectedPatientId}
-            onSubmit={() => setShowSmokingForm(false)}
-            onCancel={() => setShowSmokingForm(false)}
-          />
-        )}
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">⚠️ Allergies</h2>

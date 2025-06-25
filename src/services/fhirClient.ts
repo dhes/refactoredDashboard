@@ -147,13 +147,16 @@ async getConditions(patientId: string): Promise<Condition[]> {
   }
 
   // Observation operations
-  async getObservations(patientId: string, code?: string): Promise<Observation[]> {
-    let searchParams = `patient=Patient/${patientId}`;
-    if (code) {
-      searchParams += `&code=${code}`;
-    }
-    return fetchFHIR<Observation>('Observation', searchParams);
+async getObservations(patientId: string, code?: string, category?: string): Promise<Observation[]> {
+  let searchParams = `patient=Patient/${patientId}`;
+  if (code) {
+    searchParams += `&code=${encodeURIComponent(code)}`;
   }
+  if (category) {
+    searchParams += `&category=${encodeURIComponent(category)}`;
+  }
+  return fetchFHIR<Observation>('Observation', searchParams);
+}
 
   async getSmokingStatus(patientId: string): Promise<Observation | null> {
     // LOINC code for tobacco smoking status

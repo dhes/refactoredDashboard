@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import type { Observation } from '../types/fhir';
-import { fhirClient } from '../services/fhirClient';
+import { useState, useEffect } from "react";
+import type { Observation } from "../types/fhir";
+import { fhirClient } from "../services/fhirClient";
 
 export const useLabs = (patientId: string | undefined) => {
   const [labs, setLabs] = useState<Observation[]>([]);
@@ -15,9 +15,14 @@ export const useLabs = (patientId: string | undefined) => {
 
     setLoading(true);
     setError(null);
-    
+
     // Get observations with laboratory category
-    fhirClient.getObservations(patientId, 'http://terminology.hl7.org/CodeSystem/observation-category|laboratory')
+    fhirClient
+      .getObservations(
+        patientId,
+        undefined,
+        "http://terminology.hl7.org/CodeSystem/observation-category|laboratory"
+      )
       .then(setLabs)
       .catch(setError)
       .finally(() => setLoading(false));
