@@ -1,0 +1,67 @@
+{
+    "_id": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
+    "colName": "misc",
+    "created": "2025-06-25T20:52:31.163Z",
+    "sortNum": 10000,
+    "folders": [],
+    "requests": [
+        {
+            "_id": "3bdd0adf-9dc3-4cde-8faf-6b8795288648",
+            "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
+            "containerId": "",
+            "name": "minimal-test $everything",
+            "url": "Patient/minimal-test/$everything",
+            "method": "GET",
+            "sortNum": 20000,
+            "created": "2025-06-25T20:56:45.089Z",
+            "modified": "2025-06-25T20:56:54.844Z",
+            "headers": []
+        },
+        {
+            "_id": "e9e2cd22-ffce-4bef-96e4-5b63c5f6ef0c",
+            "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
+            "containerId": "",
+            "name": "delete an encounter",
+            "url": "Encounter/8903",
+            "method": "DELETE",
+            "sortNum": 30000,
+            "created": "2025-06-25T20:57:36.344Z",
+            "modified": "2025-06-25T20:57:53.390Z",
+            "headers": []
+        },
+        {
+            "_id": "64692b4c-926f-4977-9336-7c071107661d",
+            "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
+            "containerId": "",
+            "name": "expunge and encounter",
+            "url": "Encounter/8903/$expunge",
+            "method": "POST",
+            "sortNum": 40000,
+            "created": "2025-06-25T20:58:09.799Z",
+            "modified": "2025-06-25T20:58:40.260Z",
+            "headers": [],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\n      \"name\": \"limit\",\n      \"valueInteger\": 1000\n    },{\n      \"name\": \"expungeDeletedResources\",\n      \"valueBoolean\": true\n    },{\n      \"name\": \"expungePreviousVersions\",\n      \"valueBoolean\": true\n    }\n  ]\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "97dc6d6d-a73d-48aa-a9ee-75347265d694",
+            "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
+            "containerId": "",
+            "name": "all PlanDefinitions",
+            "url": "PlanDefinition",
+            "method": "GET",
+            "sortNum": 50000,
+            "created": "2025-06-25T21:19:57.190Z",
+            "modified": "2025-06-25T21:20:02.804Z",
+            "headers": []
+        }
+    ],
+    "settings": {
+        "options": {
+            "baseUrl": "{{FHIR_SERVER_URL}}"
+        }
+    }
+}
