@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "../ui/card";
 import { usePatient } from "../../hooks/usePatient";
-import { useMeasureReports } from "../../hooks/useMeasureReports";
+import { useMeasureReport } from "../../hooks/useMeasureReport";
 import { useObservations } from "../../hooks/useObservations";
 import { useEncounters } from "../../hooks/useEncounters";
 import { useAvailablePatients } from "../../hooks/useAvailablePatients";
@@ -40,11 +40,13 @@ const Dashboard = () => {
   const [cpt, setCpt] = useState<string>("");
   const [showSmokingStatusPrompt, setShowSmokingStatusPrompt] = useState<boolean>(false);
   const [showSmokingForm, setShowSmokingForm] = useState<boolean>(false);
+  const [showDeveloperView, setShowDeveloperView] = useState<boolean>(false);
 
   // Use all the hooks with proper destructuring
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
   const { patient, loading: patientLoading, error: patientError } = usePatient(selectedPatientId);
-  const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
+  // const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
+  const { measureReport, loading, error } = useMeasureReport(selectedPatientId, 'CMS138FHIRPreventiveTobaccoCessation');
   // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
   const { encounters, hasRecentEncounter, loading: encLoading } = useEncounters(selectedPatientId);
   const { allergies, loading: allergiesLoading } = useAllergies(selectedPatientId);
@@ -254,14 +256,14 @@ const Dashboard = () => {
   };
 
   // NOW the combined loading state will work
-  const isLoading = patientLoading || reportsLoading || encLoading;
+  const isLoading = patientLoading || encLoading;
 
   // Remove these duplicate/incomplete hook calls:
   // const { patient: hookPatient, loading: hookLoading } = usePatient(selectedPatientId);
   // const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
 
   // Get the first measure report from the array
-  const measureReport = measureReports[0];
+  // const measureReport = measureReports[0];
 
   // Add these helper functions
   const getDisplayText = (code: any): string => {
@@ -312,7 +314,7 @@ const Dashboard = () => {
     if (!coding || coding.length === 0) return "Unknown";
     return coding[0].display || coding[0].code || "Unknown";
   };
-
+console.log('measureReport:', measureReport);
   // Your return statement...
   return (
     <>

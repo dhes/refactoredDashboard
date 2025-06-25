@@ -122,8 +122,8 @@ async getConditions(patientId: string): Promise<Condition[]> {
   }
 
   async evaluateMeasure(measureId: string, patientId: string, periodStart: string, periodEnd: string): Promise<MeasureReport> {
-    const url = `${FHIR_SERVER}/Measure/${measureId}/$evaluate-measure?patient=Patient/${patientId}&periodStart=${periodStart}&periodEnd=${periodEnd}`;
-    const res = await fetch(url, { method: 'POST' });
+    const url = `${FHIR_SERVER}/Measure/${measureId}/$evaluate-measure?subject=Patient/${patientId}&periodStart=${periodStart}&periodEnd=${periodEnd}`;
+    const res = await fetch(url, { method: 'GET' });
     
     if (!res.ok) {
       throw new Error(`Failed to evaluate measure: ${res.statusText}`);
