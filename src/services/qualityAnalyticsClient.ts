@@ -195,54 +195,34 @@ export class QualityAnalyticsClient {
       const result = await response.json();
       console.log("🔍 Response received, parsing...");
 
-      // 🔍 TEST: Log the structure
-      console.log("🔍 Full QAS Response Keys:", Object.keys(result));
-      console.log("🔍 Has results array:", !!result.results);
-      console.log("🔍 Results array length:", result.results?.length);
-      console.log("🔍 Has elmDefinition:", !!result.elmDefinition);
+      // Extract clause results and ELM
+      const clauseResultsFromQAS = result.results?.[0]?.detailedResults?.[0]?.clauseResults || [];
+      const elmDefinition = result.elmDefinition;
 
-      // Extract clause results from the first patient's results
-      if (result.results?.[0]) {
-        console.log("🔍 First result keys:", Object.keys(result.results[0]));
-        console.log("🔍 Has detailedResults:", !!result.results[0].detailedResults);
+      console.log("🔍 Found clause results:", clauseResultsFromQAS.length, "clauses");
+      console.log("🔍 Has elmDefinition:", !!elmDefinition);
 
-        if (result.results[0].detailedResults?.[0]?.clauseResults) {
-          const clauseResults = result.results[0].detailedResults[0].clauseResults;
-          console.log("🔍 Found clause results:", clauseResults.length, "clauses");
-          console.log("🔍 Sample clause result:", clauseResults[0]);
+      // 🚀 NEW: Use actionable gap analyzer instead of hard-coded logic
+      if (clauseResultsFromQAS.length > 0 && elmDefinition) {
+        console.log("🎯 Running actionable gap analysis...");
 
-          // Count failed clauses
-          const failedClauses = clauseResults.filter((clause: any) => clause.final === "FALSE");
-          console.log("🔍 Failed clauses:", failedClauses.length, "out of", clauseResults.length);
-        } else {
-          console.log("🔍 No clauseResults found at results[0].detailedResults[0].clauseResults");
-          if (result.results[0].detailedResults?.[0]) {
-            console.log(
-              "🔍 detailedResults[0] keys:",
-              Object.keys(result.results[0].detailedResults[0])
-            );
-          }
-        }
-      }
+        // Get patient age from the QAS response
+        const patientAge = this.extractPatientAge(result);
 
-      // Check ELM structure
-      if (result.elmDefinition) {
-        console.log("🔍 ELM Library ID:", result.elmDefinition?.library?.identifier?.id);
-        console.log(
-          "🔍 ELM Statements:",
-          Object.keys(result.elmDefinition?.library?.statements?.def || {})
+        const actionableInsight = this.analyzeActionableGaps(
+          clauseResultsFromQAS,
+          elmDefinition,
+          patientAge
         );
 
-        // Look for Initial Population statement
-        const statements = result.elmDefinition?.library?.statements?.def || [];
-        const initialPop = statements.find((stmt: any) => stmt.name === "Initial Population");
-        if (initialPop) {
-          console.log("🔍 Found Initial Population statement with localId:", initialPop.localId);
-        }
+        console.log("🎯 Actionable insight:", actionableInsight);
+
+        // Transform to existing PopulationAnalysisResult format
+        return this.transformActionableInsightToResult(actionableInsight);
       }
 
-      // Transform the evaluate result into clinical guidance
-      return this.transformEvaluateToClinicalGuidance(result, patientId, clauseResults);
+      // Fallback to existing logic
+      return this.transformEvaluateToPopulationAnalysis(result, patientId);
     } catch (error) {
       console.error("Error generating clinical guidance:", error);
       throw error;
@@ -334,6 +314,256 @@ export class QualityAnalyticsClient {
       throw error;
     }
   }
+
+  private extractPatientAge(qasResult: any): number {
+    // Extract age from patient object in QAS response
+    const patientObj = qasResult.results?.[0]?.patientObject;
+    if (patientObj?.birthDate) {
+      const birthDate = new Date(patientObj.birthDate);
+      const today = new Date();
+      return today.getFullYear() - birthDate.getFullYear();
+    }
+    return 70; // Default for minimal-test
+  }
+
+  private analyzeActionableGaps(
+    clauseResults: any[],
+    elmDefinition: any,
+    patientAge: number
+  ): ActionableInsight {
+    console.log("🎯 Analyzing actionable gaps...");
+
+    // Step 1: Filter out intrinsic blockers
+    const intrinsicBlockers = this.checkIntrinsicBlockers(clauseResults, patientAge);
+    if (intrinsicBlockers.length > 0) {
+      return {
+        category: "intrinsic",
+        actionable: false,
+        message: intrinsicBlockers[0].message,
+        priority: "info",
+      };
+    }
+
+    // Step 2: Focus on epistemological gaps (what Dr. User can fix)
+    const epistemologicalGaps = this.analyzeEpistemologicalGaps(clauseResults, elmDefinition);
+
+    return {
+      category: "epistemological",
+      actionable: true,
+      gaps: epistemologicalGaps,
+      priority: "high",
+      recommendations: this.generateActionableRecommendations(epistemologicalGaps),
+    };
+  }
+
+  private checkIntrinsicBlockers(clauseResults: any[], patientAge: number): any[] {
+    const blockers = [];
+
+    // Age blocker
+    if (patientAge < 12) {
+      blockers.push({
+        type: "age",
+        message: `Patient is ${patientAge} years old (measure requires ≥12 years)`,
+        fixable: false,
+      });
+    }
+
+    return blockers;
+  }
+
+  private analyzeEpistemologicalGaps(
+    clauseResults: any[],
+    elmDefinition: any
+  ): EpistemologicalGap[] {
+    const gaps: EpistemologicalGap[] = [];
+
+    // Drill into visit requirements
+    const visitGaps = this.drillIntoVisitRequirements(clauseResults, elmDefinition);
+    gaps.push(...visitGaps);
+
+    return gaps;
+  }
+
+  private drillIntoVisitRequirements(
+    clauseResults: any[],
+    elmDefinition: any
+  ): EpistemologicalGap[] {
+    console.log("🔍 Drilling into visit requirements...");
+
+    const gaps: EpistemologicalGap[] = [];
+
+    // Check Preventive Visits
+    const preventiveGap = this.analyzePreventiveVisits(clauseResults, elmDefinition);
+    if (preventiveGap) gaps.push(preventiveGap);
+
+    // Check Qualifying Visits
+    const qualifyingGap = this.analyzeQualifyingVisits(clauseResults, elmDefinition);
+    if (qualifyingGap) gaps.push(qualifyingGap);
+
+    return gaps;
+  }
+
+  private analyzePreventiveVisits(
+    clauseResults: any[],
+    elmDefinition: any
+  ): EpistemologicalGap | null {
+    const preventiveClauses = clauseResults.filter(
+      (clause: any) => clause.statementName === "Preventive Visit During Measurement Period"
+    );
+
+    // Find the exists/count result for preventive visits
+    const resultClause = preventiveClauses.find(
+      (clause: any) => Array.isArray(clause.raw) && clause.raw.length === 0
+    );
+
+    if (resultClause) {
+      return {
+        type: "preventive_encounters",
+        current: 0,
+        required: 1,
+        specificTypes: [
+          "Annual Wellness Visit",
+          "Preventive Care Services - Office Visit",
+          "Preventive Care Services - Counseling",
+          "Nutrition Services",
+        ],
+        timeframe: "during measurement period",
+        fixStrategies: [
+          "Document preventive care visit with appropriate CPT code",
+          'Ensure encounter status is "finished"',
+          "Verify encounter period falls within measurement period",
+        ],
+      };
+    }
+
+    return null;
+  }
+
+  private analyzeQualifyingVisits(
+    clauseResults: any[],
+    elmDefinition: any
+  ): EpistemologicalGap | null {
+    const qualifyingClauses = clauseResults.filter(
+      (clause: any) => clause.statementName === "Qualifying Visit During Measurement Period"
+    );
+
+    // Find the count result
+    const countClause = qualifyingClauses.find(
+      (clause: any) => Array.isArray(clause.raw) && clause.raw.length === 0
+    );
+
+    if (countClause) {
+      return {
+        type: "office_encounters",
+        current: 0,
+        required: 2,
+        specificTypes: [
+          "Office Visit",
+          "Telehealth/Virtual Encounter",
+          "Physical Therapy Evaluation",
+          "Occupational Therapy Evaluation",
+        ],
+        timeframe: "during measurement period",
+        fixStrategies: [
+          "Document 2 office visits with appropriate CPT codes",
+          "Alternative: Document 1 preventive visit instead",
+        ],
+      };
+    }
+
+    return null;
+  }
+
+  private generateActionableRecommendations(gaps: EpistemologicalGap[]): string[] {
+    const recommendations: string[] = [];
+
+    for (const gap of gaps) {
+      recommendations.push(...gap.fixStrategies);
+    }
+
+    return recommendations;
+  }
+
+  private transformActionableInsightToResult(insight: ActionableInsight): PopulationAnalysisResult {
+    if (!insight.actionable) {
+      // Intrinsic blocker
+      return {
+        excluded: true,
+        reasons: [
+          {
+            statement: "Intrinsic Characteristic",
+            reason: insight.message || "Patient characteristic prevents measure applicability",
+            priority: "low" as const,
+            category: "intrinsic",
+            action: "No action required",
+          },
+        ],
+        patientStatus: {
+          eligibleForMeasure: false,
+          ageQualified: true,
+          visitQualified: false,
+          hasScreening: false,
+          currentMeasureStatus: "not_eligible",
+        },
+        recommendations: [],
+        nextSteps: [],
+      };
+    }
+
+    // Epistemological gaps - actionable!
+    const recommendations =
+      insight.gaps?.map((gap) => ({
+        priority: "high" as const,
+        category: gap.type,
+        message: `Need ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
+        action: gap.fixStrategies[0] || "Review documentation",
+      })) || [];
+
+    return {
+      excluded: true,
+      reasons:
+        insight.gaps?.map((gap) => ({
+          statement: gap.type,
+          reason: `Missing ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
+          priority: "high" as const,
+          category: gap.type,
+          action: gap.fixStrategies[0] || "Review documentation",
+        })) || [],
+      patientStatus: {
+        eligibleForMeasure: false,
+        ageQualified: true,
+        visitQualified: false,
+        hasScreening: false,
+        currentMeasureStatus: "eligible_needs_screening",
+      },
+      recommendations,
+      nextSteps:
+        insight.recommendations?.map((rec, index) => ({
+          step: index + 1,
+          priority: "immediate",
+          action: rec,
+          category: "encounters",
+        })) || [],
+    };
+  }
+}
+
+interface EpistemologicalGap {
+  type: 'preventive_encounters' | 'office_encounters';
+  current: number;
+  required: number;
+  specificTypes: string[];
+  timeframe: string;
+  fixStrategies: string[];
+}
+
+interface ActionableInsight {
+  category: 'intrinsic' | 'epistemological';
+  actionable: boolean;
+  message?: string;
+  gaps?: EpistemologicalGap[];
+  priority: 'high' | 'medium' | 'low' | 'info';
+  recommendations?: string[];
 }
 
 // Create and export a singleton instance
