@@ -7,7 +7,8 @@ export const useMeasureReport = (patientId: string | undefined, measureId: strin
   const [measureReport, setMeasureReport] = useState<MeasureReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
   useEffect(() => {
     if (!patientId) {
       setMeasureReport(null);
@@ -17,10 +18,9 @@ export const useMeasureReport = (patientId: string | undefined, measureId: strin
     setLoading(true);
     setError(null);
     
-    // Define measurement period - current year
     const currentYear = new Date().getFullYear();
-    const periodStart = `${currentYear}-01-01T00:00:00`;
-    const periodEnd = `${currentYear}-12-31T23:59:59`;
+    const periodStart = `${currentYear}-01-01`;
+    const periodEnd = `${currentYear}-12-31`;
     
     fhirClient.evaluateMeasure(measureId, patientId, periodStart, periodEnd)
       .then(report => {
@@ -33,7 +33,9 @@ export const useMeasureReport = (patientId: string | undefined, measureId: strin
         setMeasureReport(null);
       })
       .finally(() => setLoading(false));
-  }, [patientId, measureId]);
-
-  return { measureReport, loading, error };
+  }, [patientId, measureId, refreshTrigger]); // Add refreshTrigger to dependencies
+  
+  const refresh = () => setRefreshTrigger(prev => prev + 1);
+  
+  return { measureReport, loading, error, refresh };
 };

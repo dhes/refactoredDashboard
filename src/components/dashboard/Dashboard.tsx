@@ -26,14 +26,17 @@ import { useImmunizations } from "../../hooks/useImmunizations";
 import { useProcedures } from "../../hooks/useProcedures";
 import { useLabs } from "../../hooks/useLabs";
 import { useSmokingStatus } from "../../hooks/useSmokingStatus";
-
-// Helper function - add this outside the component or as a util
-function getPopulationValue(group: any, populationType: string): boolean {
-  const population = group.population?.find(
-    (pop: any) => pop.code?.coding?.[0]?.code === populationType
-  );
-  return population?.count > 0;
-}
+import {
+  getPopulationValue,
+  // isPatientAgeEligibleForTobaccoScreening,
+  // getCMS138Guidance,
+  // formatCMS138GroupForPractitioner,
+} from "../../utils/measureCQLLogic";
+import { useEnhancedGuidance } from "../../hooks/useEnhancedGuidance";
+import { getCodeSystem, getCodeDisplay } from "../../utils/medicalCodes";
+import { useQualityAnalytics, usePopulationAnalysis } from "../../hooks/useQualityAnalytics";
+import MeasureAnalysis from "./MeasureAnalysis";
+import EnhancedGuidanceBanner from "./EnhancedGuidanceBanner";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -54,11 +57,12 @@ const Dashboard = () => {
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
   const { patient, loading: patientLoading, error: patientError } = usePatient(selectedPatientId);
   // const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
-  const { measureReport, loading, error } = useMeasureReport(
-    selectedPatientId,
-    "CMS138FHIRPreventiveTobaccoCessation"
-  );
-  // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
+  const {
+    measureReport,
+    loading,
+    error,
+    refresh: refreshMeasureReport,
+  } = useMeasureReport(selectedPatientId, "CMS138FHIRPreventiveTobaccoCessation"); // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
   const { encounters, hasRecentEncounter, loading: encLoading } = useEncounters(selectedPatientId);
   const { allergies, loading: allergiesLoading } = useAllergies(selectedPatientId);
   const { conditions, loading: conditionsLoading } = useConditions(selectedPatientId);
@@ -68,6 +72,13 @@ const Dashboard = () => {
   const { procedures, loading: proceduresLoading } = useProcedures(selectedPatientId);
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
+  // const measureGuidance =
+  //   patient && measureReport ? getCMS138Guidance(measureReport, patient) : null;
+  const { guidance: enhancedGuidance, loading: guidanceLoading } = useEnhancedGuidance(
+    "CMS138FHIRPreventiveTobaccoCessation", // or whatever your measureId is
+    selectedPatientId
+  );
+  const [isCreatingEncounter, setIsCreatingEncounter] = useState(false);
 
   // Add this with your other logic, after the hooks
   // const psaReminder = useMemo(() => {
@@ -207,13 +218,17 @@ const Dashboard = () => {
   }, [latestSmokingObservation]);
 
   // Add the form submit handler
+  // Add the form submit handler
   const handleEncounterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsCreatingEncounter(true);
 
     try {
-      // Create the encounter using your FHIR client
       const encounter = {
         resourceType: "Encounter" as const,
+        meta: {
+          profile: ["http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter"],
+        },
         status: "finished" as const,
         class: {
           system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
@@ -224,9 +239,9 @@ const Dashboard = () => {
           {
             coding: [
               {
-                system: "http://www.ama-assn.org/go/cpt",
+                system: getCodeSystem(cpt),
                 code: cpt,
-                display: "Selected CPT",
+                display: getCodeDisplay(cpt),
               },
             ],
           },
@@ -235,8 +250,8 @@ const Dashboard = () => {
           reference: `Patient/${selectedPatientId}`,
         },
         period: {
-          start: encounterDate,
-          end: encounterDate,
+          start: `${encounterDate}T08:00:00.000Z`,
+          end: `${encounterDate}T08:15:00.000Z`,
         },
         reasonCode: [
           {
@@ -244,29 +259,33 @@ const Dashboard = () => {
               {
                 system: "http://hl7.org/fhir/sid/icd-10-cm",
                 code: icd10,
-                display: "Selected ICD-10",
+                display: `ICD-10 ${icd10}`,
               },
             ],
           },
         ],
       };
 
-      // Import fhirClient at the top of your file
-      await fhirClient.createEncounter(encounter);
+      const result = await fhirClient.createEncounter(encounter);
+      console.log("Encounter created successfully", result);
 
       // Reset form and close
       setShowEncounterForm(false);
+      setEncounterDate(new Date().toISOString().split("T")[0]); // Reset to today
       setIcd10("");
       setCpt("");
 
-      // TODO: Refresh the measure reports to show updated results
+      // Add a delay to ensure server has processed the encounter
+      setTimeout(() => {
+        refreshMeasureReport();
+        setIsCreatingEncounter(false);
+      }, 1500); // 1.5 second delay
     } catch (error) {
       console.error("Error creating encounter:", error);
-      // TODO: Show error message to user
+      alert("Failed to create encounter. Please try again.");
+      setIsCreatingEncounter(false);
     }
-  };
-
-  // NOW the combined loading state will work
+  }; // NOW the combined loading state will work
   const isLoading = patientLoading || encLoading;
 
   // Remove these duplicate/incomplete hook calls:
@@ -350,10 +369,28 @@ const Dashboard = () => {
           <p>{psaReminder}</p>
         </div>
       )*/}
+      {selectedPatientId && (
+        <MeasureAnalysis
+          measureId="CMS138FHIRPreventiveTobaccoCessation"
+          patientId={selectedPatientId}
+        />
+      )}
       {measureReport && (
         <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
+            <button
+              onClick={refreshMeasureReport}
+              className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
+              title="Refresh measure report"
+            >
+              🔄 Refresh
+            </button>{" "}
+            {loading && (
+              <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
+                <p>Evaluating measure...</p>
+              </div>
+            )}
             <button
               onClick={() => setShowDeveloperView(!showDeveloperView)}
               className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
@@ -362,9 +399,111 @@ const Dashboard = () => {
             </button>
           </div>
 
-          <p className="mb-2">
+          {/* Guidance Banner - Shows immediately what action is needed */}
+          {/* {measureGuidance && (
+            <div
+              className={`mb-3 p-3 rounded-lg ${
+                measureGuidance.priority === "action"
+                  ? "bg-amber-50 border border-amber-200 text-amber-900"
+                  : "bg-green-50 border border-green-200 text-green-900"
+              }`}
+            >
+              <div className="flex items-start">
+                <span className="text-lg mr-2">
+                  {measureGuidance.priority === "action" ? "⚠️" : "✅"}
+                </span>
+                <div>
+                  <p className="font-medium">{measureGuidance.message}</p>
+                  {measureGuidance.action && (
+                    <p className="text-sm mt-1">
+                      <strong>Action needed:</strong> {measureGuidance.action}
+                      {measureGuidance.action === "Document tobacco use status" && (
+                        <button
+                          onClick={() => setShowSmokingForm(true)}
+                          className="ml-2 text-sm underline hover:no-underline"
+                        >
+                          Update now →
+                        </button>
+                      )}
+                      {measureGuidance.action === "Create a qualifying encounter" && (
+                        <button
+                          onClick={() => setShowEncounterForm(true)}
+                          className="ml-2 text-sm underline hover:no-underline"
+                        >
+                          Create now →
+                        </button>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )} */}
+          {/* Add the debug section here */}
+          {selectedPatientId && (
+            <div className="mb-4 p-4 bg-yellow-50 border rounded">
+              <h4>🔧 Debug Info</h4>
+              <p>
+                <strong>Patient ID:</strong> {selectedPatientId}
+              </p>
+              <p>
+                <strong>Patient Name:</strong> {patient?.name?.[0]?.given?.join(" ")}{" "}
+                {patient?.name?.[0]?.family}
+              </p>
+              <p>
+                <strong>Patient Age:</strong>{" "}
+                {patient?.birthDate
+                  ? new Date().getFullYear() - new Date(patient.birthDate).getFullYear()
+                  : "Unknown"}
+              </p>
+              <p>
+                <strong>Guidance Loading:</strong> {guidanceLoading ? "Yes" : "No"}
+              </p>
+              <p>
+                <strong>Has Enhanced Guidance:</strong> {enhancedGuidance ? "Yes" : "No"}
+              </p>
+              {enhancedGuidance && (
+                <>
+                  <p>
+                    <strong>Enhanced Patient Name:</strong> {enhancedGuidance.patientName}
+                  </p>
+                  <p>
+                    <strong>Enhanced Patient Age:</strong> {enhancedGuidance.patientAge}
+                  </p>
+                  <p>
+                    <strong>Enhanced Status:</strong> {enhancedGuidance.status}
+                  </p>
+                  <p>
+                    <strong>Is Enhanced:</strong> {enhancedGuidance.isEnhanced ? "Yes" : "No"}
+                  </p>
+                  <p>
+                    <strong>Recommendations Count:</strong>{" "}
+                    {enhancedGuidance.recommendations?.length || 0}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
+          {guidanceLoading ? (
+            <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
+              <div className="flex items-center">
+                <span className="animate-spin mr-2">🔄</span>
+                <span>Analyzing measure requirements...</span>
+              </div>
+            </div>
+          ) : enhancedGuidance ? (
+            <EnhancedGuidanceBanner
+              guidance={enhancedGuidance}
+              onCreateEncounter={() => setShowEncounterForm(true)}
+              onDocumentScreening={() => setShowSmokingForm(true)}
+            />
+          ) : null}
+
+          {/* <p className="mb-2">
             <strong>Status:</strong> {measureReport.status}
-          </p>
+          </p> */}
           <p className="mb-2">
             <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)} to{" "}
             {measureReport.period?.end?.slice(0, 10)}
@@ -438,22 +577,24 @@ const Dashboard = () => {
           )}
 
           {/* Show encounter prompt if no qualifying encounters */}
-          {measureReport?.group?.every((group: any) =>
-            group.population.every((pop: any) => pop.count === 0)
-          ) && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-300 text-blue-800 rounded">
-              <p className="mb-2">
-                This patient has no qualifying encounters documented in 2025. Would you like to
-                create a qualifying office visit now to ensure they are counted in this measure?
-              </p>
-              <button
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={() => setShowEncounterForm(true)}
-              >
-                Create Encounter
-              </button>
-            </div>
-          )}
+          {/* {patient &&
+            measureReport?.group?.every((group: any) =>
+              group.population.every((pop: any) => pop.count === 0)
+            ) &&
+            isPatientAgeEligibleForTobaccoScreening(patient, measureReport.period?.start || "") && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-300 text-blue-800 rounded">
+                <p className="mb-2">
+                  This patient has no qualifying encounters documented in 2025. Would you like to
+                  create a qualifying office visit now to ensure they are counted in this measure?
+                </p>
+                <button
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => setShowEncounterForm(true)}
+                >
+                  Create Encounter
+                </button>
+              </div>
+            )} */}
         </div>
       )}{" "}
       {showEncounterForm && (
@@ -505,9 +646,10 @@ const Dashboard = () => {
             </div>
             <button
               type="submit"
-              className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              disabled={isCreatingEncounter || !icd10 || !cpt}
+              className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
             >
-              Submit
+              {isCreatingEncounter ? "Creating..." : "Submit"}
             </button>
             <button
               type="button"

@@ -22,11 +22,11 @@
             "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
             "containerId": "",
             "name": "delete an encounter",
-            "url": "Encounter/8903",
+            "url": "Encounter/9006",
             "method": "DELETE",
             "sortNum": 30000,
             "created": "2025-06-25T20:57:36.344Z",
-            "modified": "2025-06-25T20:57:53.390Z",
+            "modified": "2025-06-26T01:43:26.145Z",
             "headers": []
         },
         {
@@ -34,11 +34,11 @@
             "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
             "containerId": "",
             "name": "expunge and encounter",
-            "url": "Encounter/8903/$expunge",
+            "url": "Encounter/9006/$expunge",
             "method": "POST",
             "sortNum": 40000,
             "created": "2025-06-25T20:58:09.799Z",
-            "modified": "2025-06-25T20:58:40.260Z",
+            "modified": "2025-06-26T01:43:31.364Z",
             "headers": [],
             "body": {
                 "type": "json",
@@ -57,6 +57,35 @@
             "created": "2025-06-25T21:19:57.190Z",
             "modified": "2025-06-25T21:20:02.804Z",
             "headers": []
+        },
+        {
+            "_id": "daa2492f-9e02-4ebe-a9e2-c9cc02f294df",
+            "colId": "6c4ae4ca-ce0d-4900-bf87-8d311b336163",
+            "containerId": "",
+            "name": "tobacco $evaluate-measure",
+            "url": "Measure/CMS138FHIRPreventiveTobaccoCessation/$evaluate-measure?subject=Patient/minimal-test&periodStart=2025-01-01T00:00:00&periodEnd=2025-12-31T23:59:59",
+            "method": "GET",
+            "sortNum": 60000,
+            "created": "2025-06-25T22:51:12.793Z",
+            "modified": "2025-06-26T01:03:19.436Z",
+            "headers": [],
+            "params": [
+                {
+                    "name": "subject",
+                    "value": "Patient/minimal-test",
+                    "isPath": false
+                },
+                {
+                    "name": "periodStart",
+                    "value": "2025-01-01T00:00:00",
+                    "isPath": false
+                },
+                {
+                    "name": "periodEnd",
+                    "value": "2025-12-31T23:59:59",
+                    "isPath": false
+                }
+            ]
         }
     ],
     "settings": {
