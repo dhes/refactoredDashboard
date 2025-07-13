@@ -37,6 +37,7 @@ import { getCodeSystem, getCodeDisplay } from "../../utils/medicalCodes";
 import { useQualityAnalytics, usePopulationAnalysis } from "../../hooks/useQualityAnalytics";
 import MeasureAnalysis from "./MeasureAnalysis";
 import EnhancedGuidanceBanner from "./EnhancedGuidanceBanner";
+import { MeasureLogicHighlighting } from "./MeasureLogicHighlighting";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -369,12 +370,12 @@ const Dashboard = () => {
           <p>{psaReminder}</p>
         </div>
       )*/}
-      {selectedPatientId && (
+      {/* {selectedPatientId && (
         <MeasureAnalysis
           measureId="CMS138FHIRPreventiveTobaccoCessation"
           patientId={selectedPatientId}
         />
-      )}
+      )} */}
       {measureReport && (
         <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
           <div className="flex justify-between items-center mb-2">
@@ -440,7 +441,7 @@ const Dashboard = () => {
             </div>
           )} */}
           {/* Add the debug section here */}
-          {selectedPatientId && (
+          {/* {selectedPatientId && (
             <div className="mb-4 p-4 bg-yellow-50 border rounded">
               <h4>🔧 Debug Info</h4>
               <p>
@@ -483,7 +484,7 @@ const Dashboard = () => {
                 </>
               )}
             </div>
-          )}
+          )} */}
 
           {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
           {guidanceLoading ? (
@@ -510,21 +511,30 @@ const Dashboard = () => {
           </p>
 
           {showDeveloperView ? (
-            // Developer View - Original display
-            <>
-              {measureReport.group?.map((group: any, i: number) => (
-                <div key={i} className="mb-2">
-                  <h3 className="font-bold">Group {i + 1}</h3>
-                  <ul className="ml-4 list-disc">
-                    {group.population?.map((pop: any, j: number) => (
-                      <li key={j}>
-                        {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </>
+            // Developer View - Show measure logic highlighting
+            <div className="space-y-4">
+              <MeasureLogicHighlighting
+                measureId="CMS138FHIRPreventiveTobaccoCessation"
+                patientId={selectedPatientId}
+              />
+
+              {/* Keep the original group display as a fallback/additional info */}
+              <div className="mt-6 p-3 bg-gray-50 rounded">
+                <h4 className="font-semibold mb-2">Raw Group Data:</h4>
+                {measureReport.group?.map((group: any, i: number) => (
+                  <div key={i} className="mb-2">
+                    <h5 className="font-bold">Group {i + 1}</h5>
+                    <ul className="ml-4 list-disc">
+                      {group.population?.map((pop: any, j: number) => (
+                        <li key={j}>
+                          {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             // Practitioner View - User-friendly display
             <>

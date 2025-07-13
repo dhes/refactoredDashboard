@@ -1,5 +1,9 @@
 // src/services/qualityAnalyticsClient.ts
 
+import { ClinicalInterpreter, type ClinicalGuidance } from "./clinicalInterpreter";
+import { cleanEscapedHtml } from "../utils/htmlCleaner";
+import type { FQMResult, MeasureLogicHighlighting } from "../types/fqm";
+
 export interface MeasureEvaluationOptions {
   period?: {
     start: string;
@@ -80,7 +84,7 @@ export interface PopulationAnalysisResult {
 
 export class QualityAnalyticsClient {
   private baseUrl: string;
-
+  private clinicalInterpreter = new ClinicalInterpreter();
   constructor(baseUrl: string = "http://localhost:3001/api") {
     // Changed to match your app.js routes
     this.baseUrl = baseUrl;
@@ -175,15 +179,25 @@ export class QualityAnalyticsClient {
     try {
       console.log("🔍 Making fetch request to:", `${this.baseUrl}/measures/${measureId}/evaluate`);
 
+      // Get current year for measurement period
+      const currentYear = new Date().getFullYear();
+      const measurementPeriodStart = `${currentYear}-01-01`;
+      const measurementPeriodEnd = `${currentYear}-12-31`;
+
+      const requestBody = {
+        patientIds: [patientId],
+        measurementPeriodStart,
+        measurementPeriodEnd,
+        options: { includeClauseResults: true },
+      };
+      console.log("🔍 QAS Request Body:", JSON.stringify(requestBody, null, 2));
+
       const response = await fetch(`${this.baseUrl}/measures/${measureId}/evaluate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          patientIds: [patientId],
-          options: { includeClauseResults: true },
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log("🔍 Response status:", response.status, response.ok);
@@ -195,6 +209,8 @@ export class QualityAnalyticsClient {
       const result = await response.json();
       console.log("🔍 Response received, parsing...");
 
+      // console.log("Result (first 50 lines):", JSON.stringify(result, null, 2).substring(0, 5000));
+
       // Extract clause results and ELM
       const clauseResultsFromQAS = result.results?.[0]?.detailedResults?.[0]?.clauseResults || [];
       const elmDefinition = result.elmDefinition;
@@ -202,23 +218,24 @@ export class QualityAnalyticsClient {
       console.log("🔍 Found clause results:", clauseResultsFromQAS.length, "clauses");
       console.log("🔍 Has elmDefinition:", !!elmDefinition);
 
-      // 🚀 NEW: Use actionable gap analyzer instead of hard-coded logic
+      // 🚀 NEW: Use Clinical Interpreter instead of manual analysis
       if (clauseResultsFromQAS.length > 0 && elmDefinition) {
-        console.log("🎯 Running actionable gap analysis...");
+        console.log("🎯 Running Clinical Interpreter analysis...");
 
         // Get patient age from the QAS response
         const patientAge = this.extractPatientAge(result);
 
-        const actionableInsight = this.analyzeActionableGaps(
+        // Use the Clinical Interpreter!
+        const clinicalGuidance = this.clinicalInterpreter.interpretMeasureFailures(
           clauseResultsFromQAS,
           elmDefinition,
           patientAge
         );
 
-        console.log("🎯 Actionable insight:", actionableInsight);
+        console.log("🎯 Clinical guidance:", clinicalGuidance);
 
-        // Transform to existing PopulationAnalysisResult format
-        return this.transformActionableInsightToResult(actionableInsight);
+        // Transform Clinical Interpreter result to existing format
+        return this.transformClinicalGuidanceToResult(clinicalGuidance);
       }
 
       // Fallback to existing logic
@@ -228,6 +245,111 @@ export class QualityAnalyticsClient {
       throw error;
     }
   }
+
+  private transformClinicalGuidanceToResult(guidance: ClinicalGuidance): PopulationAnalysisResult {
+    console.log("🔄 Transforming clinical guidance to result format");
+
+    // Handle different guidance statuses
+    switch (guidance.status) {
+      case "measure_complete":
+        return {
+          excluded: false,
+          reasons: [],
+          patientStatus: {
+            eligibleForMeasure: true,
+            ageQualified: true,
+            visitQualified: true,
+            hasScreening: true,
+            currentMeasureStatus: "measure_complete",
+          },
+          recommendations: [],
+          nextSteps: [],
+        };
+
+      case "not_eligible":
+        return {
+          excluded: true,
+          reasons: [
+            {
+              statement: "Eligibility Criteria",
+              reason: guidance.message,
+              priority: guidance.priority as "high" | "medium" | "low",
+              category: guidance.category,
+              action: "No action required",
+            },
+          ],
+          patientStatus: {
+            eligibleForMeasure: false,
+            ageQualified: guidance.category !== "intrinsic", // Age issues are intrinsic
+            visitQualified: false,
+            hasScreening: false,
+            currentMeasureStatus: "not_eligible",
+          },
+          recommendations: [],
+          nextSteps: [],
+        };
+
+      case "eligible_needs_action":
+        const recommendations = guidance.recommendations.map((rec) => ({
+          priority: guidance.priority as "high" | "medium" | "low",
+          category: "clinical_action",
+          message: rec,
+          action: rec,
+        }));
+
+        const reasons = guidance.requirements.map((req) => ({
+          statement: req.type,
+          reason: req.description,
+          priority: req.priority as "high" | "medium" | "low",
+          category: req.category,
+          action: guidance.recommendations[0] || "Review documentation",
+        }));
+
+        return {
+          excluded: true,
+          reasons,
+          patientStatus: {
+            eligibleForMeasure: true,
+            ageQualified: true,
+            visitQualified: false,
+            hasScreening: false,
+            currentMeasureStatus: "eligible_needs_screening",
+          },
+          recommendations,
+          nextSteps: guidance.recommendations.map((rec, index) => ({
+            step: index + 1,
+            priority: "immediate",
+            action: rec,
+            category: "clinical_documentation",
+          })),
+        };
+
+      case "analysis_error":
+      default:
+        return {
+          excluded: true,
+          reasons: [
+            {
+              statement: "Analysis Error",
+              reason: guidance.message,
+              priority: "medium" as const,
+              category: "system",
+              action: "Contact support",
+            },
+          ],
+          patientStatus: {
+            eligibleForMeasure: false,
+            ageQualified: true,
+            visitQualified: false,
+            hasScreening: false,
+            currentMeasureStatus: "unknown",
+          },
+          recommendations: [],
+          nextSteps: [],
+        };
+    }
+  }
+
   // Helper method to transform evaluate results into population analysis
   private transformEvaluateToPopulationAnalysis(
     evaluateResult: any,
@@ -326,245 +448,415 @@ export class QualityAnalyticsClient {
     return 70; // Default for minimal-test
   }
 
-  private analyzeActionableGaps(
-    clauseResults: any[],
-    elmDefinition: any,
-    patientAge: number
-  ): ActionableInsight {
-    console.log("🎯 Analyzing actionable gaps...");
+  async evaluateMeasureWithHighlighting(
+    measureId: string,
+    patientIds: string[],
+    options?: MeasureEvaluationOptions
+  ): Promise<{ evaluation: MeasureEvaluationResult; highlighting: MeasureLogicHighlighting }> {
+    const result = await this.evaluateMeasure(measureId, patientIds, options);
 
-    // Step 1: Filter out intrinsic blockers
-    const intrinsicBlockers = this.checkIntrinsicBlockers(clauseResults, patientAge);
-    if (intrinsicBlockers.length > 0) {
-      return {
-        category: "intrinsic",
-        actionable: false,
-        message: intrinsicBlockers[0].message,
-        priority: "info",
-      };
-    }
+    // Extract HTML from the correct location
+    const rawHtml = (result as any).results?.[0]?.detailedResults?.[0]?.html || "";
+    console.log("Extracted rawHtml length:", rawHtml.length);
+    console.log("Raw HTML preview:", rawHtml.substring(0, 200));
 
-    // Step 2: Focus on epistemological gaps (what Dr. User can fix)
-    const epistemologicalGaps = this.analyzeEpistemologicalGaps(clauseResults, elmDefinition);
+    const cleanHtml = cleanEscapedHtml(rawHtml);
+    console.log("Clean HTML preview:", cleanHtml.substring(0, 200));
 
     return {
-      category: "epistemological",
-      actionable: true,
-      gaps: epistemologicalGaps,
-      priority: "high",
-      recommendations: this.generateActionableRecommendations(epistemologicalGaps),
-    };
-  }
-
-  private checkIntrinsicBlockers(clauseResults: any[], patientAge: number): any[] {
-    const blockers = [];
-
-    // Age blocker
-    if (patientAge < 12) {
-      blockers.push({
-        type: "age",
-        message: `Patient is ${patientAge} years old (measure requires ≥12 years)`,
-        fixable: false,
-      });
-    }
-
-    return blockers;
-  }
-
-  private analyzeEpistemologicalGaps(
-    clauseResults: any[],
-    elmDefinition: any
-  ): EpistemologicalGap[] {
-    const gaps: EpistemologicalGap[] = [];
-
-    // Drill into visit requirements
-    const visitGaps = this.drillIntoVisitRequirements(clauseResults, elmDefinition);
-    gaps.push(...visitGaps);
-
-    return gaps;
-  }
-
-  private drillIntoVisitRequirements(
-    clauseResults: any[],
-    elmDefinition: any
-  ): EpistemologicalGap[] {
-    console.log("🔍 Drilling into visit requirements...");
-
-    const gaps: EpistemologicalGap[] = [];
-
-    // Check Preventive Visits
-    const preventiveGap = this.analyzePreventiveVisits(clauseResults, elmDefinition);
-    if (preventiveGap) gaps.push(preventiveGap);
-
-    // Check Qualifying Visits
-    const qualifyingGap = this.analyzeQualifyingVisits(clauseResults, elmDefinition);
-    if (qualifyingGap) gaps.push(qualifyingGap);
-
-    return gaps;
-  }
-
-  private analyzePreventiveVisits(
-    clauseResults: any[],
-    elmDefinition: any
-  ): EpistemologicalGap | null {
-    const preventiveClauses = clauseResults.filter(
-      (clause: any) => clause.statementName === "Preventive Visit During Measurement Period"
-    );
-
-    // Find the exists/count result for preventive visits
-    const resultClause = preventiveClauses.find(
-      (clause: any) => Array.isArray(clause.raw) && clause.raw.length === 0
-    );
-
-    if (resultClause) {
-      return {
-        type: "preventive_encounters",
-        current: 0,
-        required: 1,
-        specificTypes: [
-          "Annual Wellness Visit",
-          "Preventive Care Services - Office Visit",
-          "Preventive Care Services - Counseling",
-          "Nutrition Services",
-        ],
-        timeframe: "during measurement period",
-        fixStrategies: [
-          "Document preventive care visit with appropriate CPT code",
-          'Ensure encounter status is "finished"',
-          "Verify encounter period falls within measurement period",
-        ],
-      };
-    }
-
-    return null;
-  }
-
-  private analyzeQualifyingVisits(
-    clauseResults: any[],
-    elmDefinition: any
-  ): EpistemologicalGap | null {
-    const qualifyingClauses = clauseResults.filter(
-      (clause: any) => clause.statementName === "Qualifying Visit During Measurement Period"
-    );
-
-    // Find the count result
-    const countClause = qualifyingClauses.find(
-      (clause: any) => Array.isArray(clause.raw) && clause.raw.length === 0
-    );
-
-    if (countClause) {
-      return {
-        type: "office_encounters",
-        current: 0,
-        required: 2,
-        specificTypes: [
-          "Office Visit",
-          "Telehealth/Virtual Encounter",
-          "Physical Therapy Evaluation",
-          "Occupational Therapy Evaluation",
-        ],
-        timeframe: "during measurement period",
-        fixStrategies: [
-          "Document 2 office visits with appropriate CPT codes",
-          "Alternative: Document 1 preventive visit instead",
-        ],
-      };
-    }
-
-    return null;
-  }
-
-  private generateActionableRecommendations(gaps: EpistemologicalGap[]): string[] {
-    const recommendations: string[] = [];
-
-    for (const gap of gaps) {
-      recommendations.push(...gap.fixStrategies);
-    }
-
-    return recommendations;
-  }
-
-  private transformActionableInsightToResult(insight: ActionableInsight): PopulationAnalysisResult {
-    if (!insight.actionable) {
-      // Intrinsic blocker
-      return {
-        excluded: true,
-        reasons: [
-          {
-            statement: "Intrinsic Characteristic",
-            reason: insight.message || "Patient characteristic prevents measure applicability",
-            priority: "low" as const,
-            category: "intrinsic",
-            action: "No action required",
-          },
-        ],
-        patientStatus: {
-          eligibleForMeasure: false,
-          ageQualified: true,
-          visitQualified: false,
-          hasScreening: false,
-          currentMeasureStatus: "not_eligible",
-        },
-        recommendations: [],
-        nextSteps: [],
-      };
-    }
-
-    // Epistemological gaps - actionable!
-    const recommendations =
-      insight.gaps?.map((gap) => ({
-        priority: "high" as const,
-        category: gap.type,
-        message: `Need ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
-        action: gap.fixStrategies[0] || "Review documentation",
-      })) || [];
-
-    return {
-      excluded: true,
-      reasons:
-        insight.gaps?.map((gap) => ({
-          statement: gap.type,
-          reason: `Missing ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
-          priority: "high" as const,
-          category: gap.type,
-          action: gap.fixStrategies[0] || "Review documentation",
-        })) || [],
-      patientStatus: {
-        eligibleForMeasure: false,
-        ageQualified: true,
-        visitQualified: false,
-        hasScreening: false,
-        currentMeasureStatus: "eligible_needs_screening",
+      evaluation: result,
+      highlighting: {
+        cleanHtml,
+        rawHtml,
       },
-      recommendations,
-      nextSteps:
-        insight.recommendations?.map((rec, index) => ({
-          step: index + 1,
-          priority: "immediate",
-          action: rec,
-          category: "encounters",
-        })) || [],
     };
   }
+  // private analyzeActionableGaps(
+  //   clauseResults: any[],
+  //   elmDefinition: any,
+  //   patientAge: number
+  // ): ActionableInsight {
+  //   console.log("🎯 Analyzing actionable gaps...");
+
+  //   // Step 1: Filter out intrinsic blockers
+  //   const intrinsicBlockers = this.checkIntrinsicBlockers(clauseResults, patientAge);
+  //   if (intrinsicBlockers.length > 0) {
+  //     return {
+  //       category: "intrinsic",
+  //       actionable: false,
+  //       message: intrinsicBlockers[0].message,
+  //       priority: "info",
+  //     };
+  //   }
+
+  //   // Step 2: Focus on epistemological gaps (what Dr. User can fix)
+  //   const epistemologicalGaps = this.analyzeEpistemologicalGaps(clauseResults, elmDefinition);
+
+  //   return {
+  //     category: "epistemological",
+  //     actionable: true,
+  //     gaps: epistemologicalGaps,
+  //     priority: "high",
+  //     recommendations: this.generateActionableRecommendations(epistemologicalGaps),
+  //   };
+  // }
+
+  // private checkIntrinsicBlockers(clauseResults: any[], patientAge: number): any[] {
+  //   const blockers = [];
+
+  //   // Age blocker
+  //   if (patientAge < 12) {
+  //     blockers.push({
+  //       type: "age",
+  //       message: `Patient is ${patientAge} years old (measure requires ≥12 years)`,
+  //       fixable: false,
+  //     });
+  //   }
+
+  //   return blockers;
+  // }
+
+  // private analyzeEpistemologicalGaps(
+  //   clauseResults: any[],
+  //   elmDefinition: any
+  // ): EpistemologicalGap[] {
+  //   const gaps: EpistemologicalGap[] = [];
+
+  //   // Drill into visit requirements
+  //   const visitGaps = this.drillIntoVisitRequirements(clauseResults, elmDefinition);
+  //   gaps.push(...visitGaps);
+
+  //   return gaps;
+  // }
+
+  // private drillIntoVisitRequirements(
+  //   clauseResults: any[],
+  //   elmDefinition: any
+  // ): EpistemologicalGap[] {
+  //   console.log("🔍 Drilling into visit requirements...");
+
+  //   const gaps: EpistemologicalGap[] = [];
+
+  //   // Check Preventive Visits
+  //   const preventiveGap = this.analyzePreventiveVisits(clauseResults, elmDefinition);
+  //   if (preventiveGap) gaps.push(preventiveGap);
+
+  //   // Check Qualifying Visits
+  //   const qualifyingGap = this.analyzeQualifyingVisits(clauseResults, elmDefinition);
+  //   if (qualifyingGap) gaps.push(qualifyingGap);
+
+  //   return gaps;
+  // }
+
+  // private drillIntoVisitRequirements(
+  //   clauseResults: any[],
+  //   elmDefinition: any
+  // ): EpistemologicalGap[] {
+  //   console.log("🔍 Drilling into visit requirements...");
+
+  //   const gaps: EpistemologicalGap[] = [];
+
+  //   // Check Preventive Visits first
+  //   const preventiveGap = this.analyzePreventiveVisits(clauseResults, elmDefinition);
+  //   const qualifyingGap = this.analyzeQualifyingVisits(clauseResults, elmDefinition);
+
+  //   // The CQL logic is: (Count(Qualifying) >= 2) OR (exists Preventive)
+  //   // If either condition is met, no gap exists
+
+  //   const hasPreventiveVisits = !preventiveGap; // No gap means visits found
+  //   const hasSufficientQualifying = !qualifyingGap; // No gap means sufficient visits
+
+  //   console.log("🔍 Visit analysis:", {
+  //     hasPreventiveVisits,
+  //     hasSufficientQualifying,
+  //     preventiveGap: !!preventiveGap,
+  //     qualifyingGap: !!qualifyingGap,
+  //   });
+
+  //   // If EITHER condition is satisfied, patient passes the visit requirement
+  //   if (hasPreventiveVisits || hasSufficientQualifying) {
+  //     console.log("🔍 → Visit requirement satisfied (OR condition met)");
+  //     return []; // No gaps - measure requirement met
+  //   }
+
+  //   // Only add gaps if BOTH conditions fail
+  //   if (preventiveGap) gaps.push(preventiveGap);
+  //   if (qualifyingGap) gaps.push(qualifyingGap);
+
+  //   return gaps;
+  // }
+
+  // private analyzePreventiveVisits(
+  //   clauseResults: any[],
+  //   elmDefinition: any
+  // ): EpistemologicalGap | null {
+  //   const preventiveClauses = clauseResults.filter(
+  //     (clause: any) => clause.statementName === "Preventive Visit During Measurement Period"
+  //   );
+
+  //   console.log("🔍 Preventive visit clauses:", preventiveClauses.length);
+  //   console.log("🔍 Sample preventive clause:", preventiveClauses[0]);
+
+  //   // Find the exists/count result for preventive visits
+  //   const resultClause = preventiveClauses.find((clause: any) => Array.isArray(clause.raw));
+
+  //   console.log("🔍 Preventive result clause:", resultClause);
+
+  //   if (resultClause) {
+  //     console.log("🔍 Preventive raw value:", resultClause.raw);
+  //     console.log("🔍 Preventive raw length:", resultClause.raw.length);
+
+  //     if (resultClause.raw.length === 0) {
+  //       console.log("🔍 → Creating preventive gap (0 encounters)");
+  //       return {
+  //         type: "preventive_encounters",
+  //         current: 0,
+  //         required: 1,
+  //         specificTypes: [
+  //           "Annual Wellness Visit",
+  //           "Preventive Care Services - Office Visit",
+  //           "Preventive Care Services - Counseling",
+  //           "Nutrition Services",
+  //         ],
+  //         timeframe: "during measurement period",
+  //         fixStrategies: [
+  //           "Document preventive care visit with appropriate CPT code",
+  //           'Ensure encounter status is "finished"',
+  //           "Verify encounter period falls within measurement period",
+  //         ],
+  //       };
+  //     } else {
+  //       console.log("🔍 → Preventive visits found, no gap needed");
+  //     }
+  //   }
+
+  //   return null;
+  // }
+
+  // private analyzeQualifyingVisits(
+  //   clauseResults: any[],
+  //   elmDefinition: any
+  // ): EpistemologicalGap | null {
+  //   const qualifyingClauses = clauseResults.filter(
+  //     (clause: any) => clause.statementName === "Qualifying Visit During Measurement Period"
+  //   );
+
+  //   console.log("🔍 Qualifying visit clauses:", qualifyingClauses.length);
+  //   console.log("🔍 Sample qualifying clause:", qualifyingClauses[0]);
+
+  //   // Find the count result
+  //   const countClause = qualifyingClauses.find((clause: any) => Array.isArray(clause.raw));
+
+  //   console.log("🔍 Qualifying result clause:", countClause);
+
+  //   if (countClause) {
+  //     console.log("🔍 Qualifying raw value:", countClause.raw);
+  //     console.log("🔍 Qualifying raw length:", countClause.raw.length);
+
+  //     if (countClause.raw.length < 2) {
+  //       console.log("🔍 → Creating qualifying gap (< 2 encounters)");
+  //       return {
+  //         type: "office_encounters",
+  //         current: countClause.raw.length,
+  //         required: 2,
+  //         specificTypes: [
+  //           "Office Visit",
+  //           "Telehealth/Virtual Encounter",
+  //           "Physical Therapy Evaluation",
+  //           "Occupational Therapy Evaluation",
+  //         ],
+  //         timeframe: "during measurement period",
+  //         fixStrategies:
+  //           countClause.raw.length === 0
+  //             ? [
+  //                 "Document office visits with appropriate CPT codes",
+  //                 'Ensure encounter.status = "finished"',
+  //                 "Verify encounter.period during measurement period",
+  //                 "Alternative: Document 1 preventive visit instead",
+  //               ]
+  //             : [
+  //                 `Document ${2 - countClause.raw.length} more qualifying office visit(s)`,
+  //                 "Or recode existing visit as preventive if appropriate",
+  //               ],
+  //       };
+  //     } else {
+  //       console.log("🔍 → Sufficient qualifying visits, no gap needed");
+  //     }
+  //   }
+
+  //   return null;
+  // }
+
+  // private generateActionableRecommendations(gaps: EpistemologicalGap[]): string[] {
+  //   const recommendations: string[] = [];
+
+  //   for (const gap of gaps) {
+  //     recommendations.push(...gap.fixStrategies);
+  //   }
+
+  //   return recommendations;
+  // }
+
+  // private transformActionableInsightToResult(insight: ActionableInsight): PopulationAnalysisResult {
+  //   if (!insight.actionable) {
+  //     // Intrinsic blocker
+  //     return {
+  //       excluded: true,
+  //       reasons: [
+  //         {
+  //           statement: "Intrinsic Characteristic",
+  //           reason: insight.message || "Patient characteristic prevents measure applicability",
+  //           priority: "low" as const,
+  //           category: "intrinsic",
+  //           action: "No action required",
+  //         },
+  //       ],
+  //       patientStatus: {
+  //         eligibleForMeasure: false,
+  //         ageQualified: true,
+  //         visitQualified: false,
+  //         hasScreening: false,
+  //         currentMeasureStatus: "not_eligible",
+  //       },
+  //       recommendations: [],
+  //       nextSteps: [],
+  //     };
+  //   }
+
+  //   // Epistemological gaps - actionable!
+  //   const recommendations =
+  //     insight.gaps?.map((gap) => ({
+  //       priority: "high" as const,
+  //       category: gap.type,
+  //       message: `Need ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
+  //       action: gap.fixStrategies[0] || "Review documentation",
+  //     })) || [];
+
+  //   return {
+  //     excluded: true,
+  //     reasons:
+  //       insight.gaps?.map((gap) => ({
+  //         statement: gap.type,
+  //         reason: `Missing ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
+  //         priority: "high" as const,
+  //         category: gap.type,
+  //         action: gap.fixStrategies[0] || "Review documentation",
+  //       })) || [],
+  //     patientStatus: {
+  //       eligibleForMeasure: false,
+  //       ageQualified: true,
+  //       visitQualified: false,
+  //       hasScreening: false,
+  //       currentMeasureStatus: "eligible_needs_screening",
+  //     },
+  //     recommendations,
+  //     nextSteps:
+  //       insight.recommendations?.map((rec, index) => ({
+  //         step: index + 1,
+  //         priority: "immediate",
+  //         action: rec,
+  //         category: "encounters",
+  //       })) || [],
+  //   };
+  // }
+
+  // private transformActionableInsightToResult(insight: ActionableInsight): PopulationAnalysisResult {
+  //   if (!insight.actionable) {
+  //     // Intrinsic blocker
+  //     return {
+  //       excluded: true,
+  //       reasons: [
+  //         {
+  //           statement: "Intrinsic Characteristic",
+  //           reason: insight.message || "Patient characteristic prevents measure applicability",
+  //           priority: "low" as const,
+  //           category: "intrinsic",
+  //           action: "No action required",
+  //         },
+  //       ],
+  //       patientStatus: {
+  //         eligibleForMeasure: false,
+  //         ageQualified: true,
+  //         visitQualified: false,
+  //         hasScreening: false,
+  //         currentMeasureStatus: "not_eligible",
+  //       },
+  //       recommendations: [],
+  //       nextSteps: [],
+  //     };
+  //   }
+
+  //   // Epistemological - check if gaps exist
+  //   if (!insight.gaps || insight.gaps.length === 0) {
+  //     // No gaps = measure requirements met!
+  //     return {
+  //       excluded: false, // ← Patient is NOT excluded
+  //       reasons: [],
+  //       patientStatus: {
+  //         eligibleForMeasure: true,
+  //         ageQualified: true,
+  //         visitQualified: true, // ← Visit requirement met
+  //         hasScreening: true, // ← Assuming screening/visits completed
+  //         currentMeasureStatus: "measure_complete", // ← Key status change!
+  //       },
+  //       recommendations: [],
+  //       nextSteps: [],
+  //     };
+  //   }
+
+  //   // Has gaps - actionable issues to fix
+  //   const recommendations = insight.gaps.map((gap) => ({
+  //     priority: "high" as const,
+  //     category: gap.type,
+  //     message: `Need ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
+  //     action: gap.fixStrategies[0] || "Review documentation",
+  //   }));
+
+  //   return {
+  //     excluded: true,
+  //     reasons: insight.gaps.map((gap) => ({
+  //       statement: gap.type,
+  //       reason: `Missing ${gap.required - gap.current} ${gap.type.replace("_", " ")}`,
+  //       priority: "high" as const,
+  //       category: gap.type,
+  //       action: gap.fixStrategies[0] || "Review documentation",
+  //     })),
+  //     patientStatus: {
+  //       eligibleForMeasure: false,
+  //       ageQualified: true,
+  //       visitQualified: false,
+  //       hasScreening: false,
+  //       currentMeasureStatus: "eligible_needs_screening",
+  //     },
+  //     recommendations,
+  //     nextSteps:
+  //       insight.recommendations?.map((rec, index) => ({
+  //         step: index + 1,
+  //         priority: "immediate",
+  //         action: rec,
+  //         category: "encounters",
+  //       })) || [],
+  //   };
+  // }
 }
 
-interface EpistemologicalGap {
-  type: 'preventive_encounters' | 'office_encounters';
-  current: number;
-  required: number;
-  specificTypes: string[];
-  timeframe: string;
-  fixStrategies: string[];
-}
+// interface EpistemologicalGap {
+//   type: "preventive_encounters" | "office_encounters";
+//   current: number;
+//   required: number;
+//   specificTypes: string[];
+//   timeframe: string;
+//   fixStrategies: string[];
+// }
 
-interface ActionableInsight {
-  category: 'intrinsic' | 'epistemological';
-  actionable: boolean;
-  message?: string;
-  gaps?: EpistemologicalGap[];
-  priority: 'high' | 'medium' | 'low' | 'info';
-  recommendations?: string[];
-}
+// interface ActionableInsight {
+//   category: "intrinsic" | "epistemological";
+//   actionable: boolean;
+//   message?: string;
+//   gaps?: EpistemologicalGap[];
+//   priority: "high" | "medium" | "low" | "info";
+//   recommendations?: string[];
+// }
 
 // Create and export a singleton instance
 export const qualityAnalyticsClient = new QualityAnalyticsClient();
