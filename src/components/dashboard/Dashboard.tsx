@@ -62,7 +62,7 @@ const Dashboard = () => {
     measureReport,
     loading,
     error,
-    refresh: refreshMeasureReport,
+    // refresh: refreshMeasureReport,
   } = useMeasureReport(selectedPatientId, "CMS138FHIRPreventiveTobaccoCessation"); // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
   const { encounters, hasRecentEncounter, loading: encLoading } = useEncounters(selectedPatientId);
   const { allergies, loading: allergiesLoading } = useAllergies(selectedPatientId);
@@ -277,10 +277,10 @@ const Dashboard = () => {
       setCpt("");
 
       // Add a delay to ensure server has processed the encounter
-      setTimeout(() => {
-        refreshMeasureReport();
-        setIsCreatingEncounter(false);
-      }, 1500); // 1.5 second delay
+      // setTimeout(() => {
+      //   refreshMeasureReport();
+      //   setIsCreatingEncounter(false);
+      // }, 1500); // 1.5 second delay
     } catch (error) {
       console.error("Error creating encounter:", error);
       alert("Failed to create encounter. Please try again.");
@@ -381,7 +381,7 @@ const Dashboard = () => {
           <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
-              <button
+              {/* <button
                 onClick={refreshMeasureReport}
                 className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
                 title="Refresh measure report"
@@ -392,7 +392,7 @@ const Dashboard = () => {
                 <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
                   <p>Evaluating measure...</p>
                 </div>
-              )}
+              )} */}
               <button
                 onClick={() => setShowDeveloperView(!showDeveloperView)}
                 className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
