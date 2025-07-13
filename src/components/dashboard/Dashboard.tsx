@@ -75,10 +75,10 @@ const Dashboard = () => {
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
   // const measureGuidance =
   //   patient && measureReport ? getCMS138Guidance(measureReport, patient) : null;
-  const { guidance: enhancedGuidance, loading: guidanceLoading } = useEnhancedGuidance(
-    "CMS138FHIRPreventiveTobaccoCessation", // or whatever your measureId is
-    selectedPatientId
-  );
+  // const { guidance: enhancedGuidance, loading: guidanceLoading } = useEnhancedGuidance(
+  //   "CMS138FHIRPreventiveTobaccoCessation", // or whatever your measureId is
+  //   selectedPatientId
+  // );
   const [isCreatingEncounter, setIsCreatingEncounter] = useState(false);
 
   // Add this with your other logic, after the hooks
@@ -376,32 +376,33 @@ const Dashboard = () => {
           patientId={selectedPatientId}
         />
       )} */}
-      {measureReport && (
-        <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
-            <button
-              onClick={refreshMeasureReport}
-              className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
-              title="Refresh measure report"
-            >
-              🔄 Refresh
-            </button>{" "}
-            {loading && (
-              <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
-                <p>Evaluating measure...</p>
-              </div>
-            )}
-            <button
-              onClick={() => setShowDeveloperView(!showDeveloperView)}
-              className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
-            >
-              {showDeveloperView ? "Practitioner View" : "Developer View"}
-            </button>
-          </div>
+      {
+        /*false &&*/ measureReport && (
+          <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
+              <button
+                onClick={refreshMeasureReport}
+                className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
+                title="Refresh measure report"
+              >
+                🔄 Refresh
+              </button>{" "}
+              {loading && (
+                <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
+                  <p>Evaluating measure...</p>
+                </div>
+              )}
+              <button
+                onClick={() => setShowDeveloperView(!showDeveloperView)}
+                className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
+              >
+                {showDeveloperView ? "Practitioner View" : "Developer View"}
+              </button>
+            </div>
 
-          {/* Guidance Banner - Shows immediately what action is needed */}
-          {/* {measureGuidance && (
+            {/* Guidance Banner - Shows immediately what action is needed */}
+            {/* {measureGuidance && (
             <div
               className={`mb-3 p-3 rounded-lg ${
                 measureGuidance.priority === "action"
@@ -440,8 +441,8 @@ const Dashboard = () => {
               </div>
             </div>
           )} */}
-          {/* Add the debug section here */}
-          {/* {selectedPatientId && (
+            {/* Add the debug section here */}
+            {/* {selectedPatientId && (
             <div className="mb-4 p-4 bg-yellow-50 border rounded">
               <h4>🔧 Debug Info</h4>
               <p>
@@ -486,8 +487,8 @@ const Dashboard = () => {
             </div>
           )} */}
 
-          {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
-          {guidanceLoading ? (
+            {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
+            {/* {guidanceLoading ? (
             <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
               <div className="flex items-center">
                 <span className="animate-spin mr-2">🔄</span>
@@ -500,94 +501,110 @@ const Dashboard = () => {
               onCreateEncounter={() => setShowEncounterForm(true)}
               onDocumentScreening={() => setShowSmokingForm(true)}
             />
-          ) : null}
+          ) : null} */}
 
-          {/* <p className="mb-2">
+            {/* <p className="mb-2">
             <strong>Status:</strong> {measureReport.status}
           </p> */}
-          <p className="mb-2">
-            <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)} to{" "}
-            {measureReport.period?.end?.slice(0, 10)}
-          </p>
+            <p className="mb-2">
+              <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)} to{" "}
+              {measureReport.period?.end?.slice(0, 10)}
+            </p>
 
-          {showDeveloperView ? (
-            // Developer View - Show measure logic highlighting
-            <div className="space-y-4">
-              <MeasureLogicHighlighting
-                measureId="CMS138FHIRPreventiveTobaccoCessation"
-                patientId={selectedPatientId}
-              />
-
-              {/* Keep the original group display as a fallback/additional info */}
-              <div className="mt-6 p-3 bg-gray-50 rounded">
-                <h4 className="font-semibold mb-2">Raw Group Data:</h4>
-                {measureReport.group?.map((group: any, i: number) => (
-                  <div key={i} className="mb-2">
-                    <h5 className="font-bold">Group {i + 1}</h5>
-                    <ul className="ml-4 list-disc">
-                      {group.population?.map((pop: any, j: number) => (
-                        <li key={j}>
-                          {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+            {showDeveloperView ? (
+              // Developer View - Show measure logic highlighting and raw group data
+              <div className="space-y-4">
+                {" "}
+                {/* This div provides vertical spacing between the cards */}
+                {/* Raw Group Data Card */}
+                <Card>
+                  <CardContent>
+                    {" "}
+                    {/* Assuming CardContent is used for inner padding/structure */}
+                    <h4 className="font-semibold mb-2">Raw Group Data:</h4>
+                    {measureReport.group?.map((group: any, i: number) => (
+                      <div key={i} className="mb-2">
+                        <h5 className="font-bold">Group {i + 1}</h5>
+                        <ul className="ml-4 list-disc">
+                          {group.population?.map((pop: any, j: number) => (
+                            <li key={j}>
+                              {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+                {/* Measure Logic Highlighting Card */}
+                <Card>
+                  <CardContent>
+                    {" "}
+                    {/* Assuming CardContent is used for inner padding/structure */}
+                    <MeasureLogicHighlighting
+                      measureId="CMS138FHIRPreventiveTobaccoCessation"
+                      patientId={selectedPatientId}
+                    />
+                  </CardContent>
+                </Card>
               </div>
-            </div>
-          ) : (
-            // Practitioner View - User-friendly display
-            <>
-              {/* Group 1: Tobacco History */}
-              {measureReport.group?.[0] && (
-                <div className="mb-4 p-3 bg-white rounded">
-                  <h3 className="font-bold mb-2">#1 Tobacco History Documentation</h3>
-                  <div className="space-y-1">
-                    <p>
-                      • Should have tobacco history:{" "}
-                      {getPopulationValue(measureReport.group[0], "denominator") ? "✓ Yes" : "✗ No"}
-                    </p>
-                    <p>
-                      • Excluded from tobacco history:{" "}
-                      {getPopulationValue(measureReport.group[0], "denominator-exclusion")
-                        ? "✓ Yes"
-                        : "✗ No"}
-                    </p>
-                    <p>
-                      • Has tobacco history in current year:{" "}
-                      {getPopulationValue(measureReport.group[0], "numerator") ? "✓ Yes" : "✗ No"}
-                    </p>
+            ) : (
+              // Practitioner View - User-friendly display (remains unchanged here)
+              <>
+                {/* Group 1: Tobacco History */}
+                {measureReport.group?.[0] && (
+                  <div className="mb-4 p-3 bg-white rounded">
+                    <h3 className="font-bold mb-2">#1 Tobacco History Documentation</h3>
+                    <div className="space-y-1">
+                      <p>
+                        • Should have tobacco history:{" "}
+                        {getPopulationValue(measureReport.group[0], "denominator")
+                          ? "✓ Yes"
+                          : "✗ No"}
+                      </p>
+                      <p>
+                        • Excluded from tobacco history:{" "}
+                        {getPopulationValue(measureReport.group[0], "denominator-exclusion")
+                          ? "✓ Yes"
+                          : "✗ No"}
+                      </p>
+                      <p>
+                        • Has tobacco history in current year:{" "}
+                        {getPopulationValue(measureReport.group[0], "numerator") ? "✓ Yes" : "✗ No"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Group 2: Tobacco Intervention */}
-              {measureReport.group?.[1] && (
-                <div className="mb-4 p-3 bg-white rounded">
-                  <h3 className="font-bold mb-2">#2 Tobacco Intervention</h3>
-                  <div className="space-y-1">
-                    <p>
-                      • Should have tobacco intervention:{" "}
-                      {getPopulationValue(measureReport.group[1], "denominator") ? "✓ Yes" : "✗ No"}
-                    </p>
-                    <p>
-                      • Excluded from tobacco intervention:{" "}
-                      {getPopulationValue(measureReport.group[1], "denominator-exclusion")
-                        ? "✓ Yes"
-                        : "✗ No"}
-                    </p>
-                    <p>
-                      • Got tobacco intervention:{" "}
-                      {getPopulationValue(measureReport.group[1], "numerator") ? "✓ Yes" : "✗ No"}
-                    </p>
+                {/* Group 2: Tobacco Intervention */}
+                {measureReport.group?.[1] && (
+                  <div className="mb-4 p-3 bg-white rounded">
+                    <h3 className="font-bold mb-2">#2 Tobacco Intervention</h3>
+                    <div className="space-y-1">
+                      <p>
+                        • Should have tobacco intervention:{" "}
+                        {getPopulationValue(measureReport.group[1], "denominator")
+                          ? "✓ Yes"
+                          : "✗ No"}
+                      </p>
+                      <p>
+                        • Excluded from tobacco intervention:{" "}
+                        {getPopulationValue(measureReport.group[1], "denominator-exclusion")
+                          ? "✓ Yes"
+                          : "✗ No"}
+                      </p>
+                      <p>
+                        • Got tobacco intervention:{" "}
+                        {getPopulationValue(measureReport.group[1], "numerator") ? "✓ Yes" : "✗ No"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
 
-          {/* Show encounter prompt if no qualifying encounters */}
-          {/* {patient &&
+            {/* Show encounter prompt if no qualifying encounters */}
+            {/* {patient &&
             measureReport?.group?.every((group: any) =>
               group.population.every((pop: any) => pop.count === 0)
             ) &&
@@ -605,8 +622,9 @@ const Dashboard = () => {
                 </button>
               </div>
             )} */}
-        </div>
-      )}{" "}
+          </div>
+        )
+      }{" "}
       {showEncounterForm && (
         <div className="mb-4 p-4 border rounded bg-white shadow">
           <h3 className="text-lg font-semibold mb-2">📝 New Encounter Form</h3>
