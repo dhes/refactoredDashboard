@@ -53,6 +53,7 @@ const Dashboard = () => {
   const [showSmokingStatusPrompt, setShowSmokingStatusPrompt] = useState<boolean>(false);
   const [showSmokingForm, setShowSmokingForm] = useState<boolean>(false);
   const [showDeveloperView, setShowDeveloperView] = useState<boolean>(false);
+  const [showSuggestions, setShowSuggestions] = useState(false); // Start closed by default
 
   // Use all the hooks with proper destructuring
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
@@ -376,255 +377,282 @@ const Dashboard = () => {
           patientId={selectedPatientId}
         />
       )} */}
-      {
-        /*false &&*/ measureReport && (
-          <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
-              {/* <button
-                onClick={refreshMeasureReport}
-                className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
-                title="Refresh measure report"
-              >
-                🔄 Refresh
-              </button>{" "}
-              {loading && (
-                <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
-                  <p>Evaluating measure...</p>
-                </div>
-              )} */}
-              <button
-                onClick={() => setShowDeveloperView(!showDeveloperView)}
-                className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
-              >
-                {showDeveloperView ? "Practitioner View" : "Developer View"}
-              </button>
-            </div>
-
-            {/* Guidance Banner - Shows immediately what action is needed */}
-            {/* {measureGuidance && (
-            <div
-              className={`mb-3 p-3 rounded-lg ${
-                measureGuidance.priority === "action"
-                  ? "bg-amber-50 border border-amber-200 text-amber-900"
-                  : "bg-green-50 border border-green-200 text-green-900"
-              }`}
-            >
-              <div className="flex items-start">
-                <span className="text-lg mr-2">
-                  {measureGuidance.priority === "action" ? "⚠️" : "✅"}
-                </span>
-                <div>
-                  <p className="font-medium">{measureGuidance.message}</p>
-                  {measureGuidance.action && (
-                    <p className="text-sm mt-1">
-                      <strong>Action needed:</strong> {measureGuidance.action}
-                      {measureGuidance.action === "Document tobacco use status" && (
-                        <button
-                          onClick={() => setShowSmokingForm(true)}
-                          className="ml-2 text-sm underline hover:no-underline"
-                        >
-                          Update now →
-                        </button>
-                      )}
-                      {measureGuidance.action === "Create a qualifying encounter" && (
-                        <button
-                          onClick={() => setShowEncounterForm(true)}
-                          className="ml-2 text-sm underline hover:no-underline"
-                        >
-                          Create now →
-                        </button>
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )} */}
-            {/* Add the debug section here */}
-            {/* {selectedPatientId && (
-            <div className="mb-4 p-4 bg-yellow-50 border rounded">
-              <h4>🔧 Debug Info</h4>
-              <p>
-                <strong>Patient ID:</strong> {selectedPatientId}
-              </p>
-              <p>
-                <strong>Patient Name:</strong> {patient?.name?.[0]?.given?.join(" ")}{" "}
-                {patient?.name?.[0]?.family}
-              </p>
-              <p>
-                <strong>Patient Age:</strong>{" "}
-                {patient?.birthDate
-                  ? new Date().getFullYear() - new Date(patient.birthDate).getFullYear()
-                  : "Unknown"}
-              </p>
-              <p>
-                <strong>Guidance Loading:</strong> {guidanceLoading ? "Yes" : "No"}
-              </p>
-              <p>
-                <strong>Has Enhanced Guidance:</strong> {enhancedGuidance ? "Yes" : "No"}
-              </p>
-              {enhancedGuidance && (
-                <>
-                  <p>
-                    <strong>Enhanced Patient Name:</strong> {enhancedGuidance.patientName}
-                  </p>
-                  <p>
-                    <strong>Enhanced Patient Age:</strong> {enhancedGuidance.patientAge}
-                  </p>
-                  <p>
-                    <strong>Enhanced Status:</strong> {enhancedGuidance.status}
-                  </p>
-                  <p>
-                    <strong>Is Enhanced:</strong> {enhancedGuidance.isEnhanced ? "Yes" : "No"}
-                  </p>
-                  <p>
-                    <strong>Recommendations Count:</strong>{" "}
-                    {enhancedGuidance.recommendations?.length || 0}
-                  </p>
-                </>
-              )}
-            </div>
-          )} */}
-
-            {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
-            {/* {guidanceLoading ? (
-            <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
-              <div className="flex items-center">
-                <span className="animate-spin mr-2">🔄</span>
-                <span>Analyzing measure requirements...</span>
-              </div>
-            </div>
-          ) : enhancedGuidance ? (
-            <EnhancedGuidanceBanner
-              guidance={enhancedGuidance}
-              onCreateEncounter={() => setShowEncounterForm(true)}
-              onDocumentScreening={() => setShowSmokingForm(true)}
-            />
-          ) : null} */}
-
-            {/* <p className="mb-2">
-            <strong>Status:</strong> {measureReport.status}
-          </p> */}
-            <p className="mb-2">
-              <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)} to{" "}
-              {measureReport.period?.end?.slice(0, 10)}
-            </p>
-
-            {showDeveloperView ? (
-              // Developer View - Show measure logic highlighting and raw group data
-              <div className="space-y-4">
-                {" "}
-                {/* This div provides vertical spacing between the cards */}
-                {/* Raw Group Data Card */}
-                <Card>
-                  <CardContent>
-                    {" "}
-                    {/* Assuming CardContent is used for inner padding/structure */}
-                    <h4 className="font-semibold mb-2">Raw Group Data:</h4>
-                    {measureReport.group?.map((group: any, i: number) => (
-                      <div key={i} className="mb-2">
-                        <h5 className="font-bold">Group {i + 1}</h5>
-                        <ul className="ml-4 list-disc">
-                          {group.population?.map((pop: any, j: number) => (
-                            <li key={j}>
-                              {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-                {/* Measure Logic Highlighting Card */}
-                <Card>
-                  <CardContent>
-                    {" "}
-                    {/* Assuming CardContent is used for inner padding/structure */}
-                    <MeasureLogicHighlighting
-                      measureId="CMS138FHIRPreventiveTobaccoCessation"
-                      patientId={selectedPatientId}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              // Practitioner View - User-friendly display (remains unchanged here)
-              <>
-                {/* Group 1: Tobacco History */}
-                {measureReport.group?.[0] && (
-                  <div className="mb-4 p-3 bg-white rounded">
-                    <h3 className="font-bold mb-2">#1 Tobacco History Documentation</h3>
-                    <div className="space-y-1">
-                      <p>
-                        • Should have tobacco history:{" "}
-                        {getPopulationValue(measureReport.group[0], "denominator")
-                          ? "✓ Yes"
-                          : "✗ No"}
-                      </p>
-                      <p>
-                        • Excluded from tobacco history:{" "}
-                        {getPopulationValue(measureReport.group[0], "denominator-exclusion")
-                          ? "✓ Yes"
-                          : "✗ No"}
-                      </p>
-                      <p>
-                        • Has tobacco history in current year:{" "}
-                        {getPopulationValue(measureReport.group[0], "numerator") ? "✓ Yes" : "✗ No"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Group 2: Tobacco Intervention */}
-                {measureReport.group?.[1] && (
-                  <div className="mb-4 p-3 bg-white rounded">
-                    <h3 className="font-bold mb-2">#2 Tobacco Intervention</h3>
-                    <div className="space-y-1">
-                      <p>
-                        • Should have tobacco intervention:{" "}
-                        {getPopulationValue(measureReport.group[1], "denominator")
-                          ? "✓ Yes"
-                          : "✗ No"}
-                      </p>
-                      <p>
-                        • Excluded from tobacco intervention:{" "}
-                        {getPopulationValue(measureReport.group[1], "denominator-exclusion")
-                          ? "✓ Yes"
-                          : "✗ No"}
-                      </p>
-                      <p>
-                        • Got tobacco intervention:{" "}
-                        {getPopulationValue(measureReport.group[1], "numerator") ? "✓ Yes" : "✗ No"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Show encounter prompt if no qualifying encounters */}
-            {/* {patient &&
-            measureReport?.group?.every((group: any) =>
-              group.population.every((pop: any) => pop.count === 0)
-            ) &&
-            isPatientAgeEligibleForTobaccoScreening(patient, measureReport.period?.start || "") && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-300 text-blue-800 rounded">
-                <p className="mb-2">
-                  This patient has no qualifying encounters documented in 2025. Would you like to
-                  create a qualifying office visit now to ensure they are counted in this measure?
-                </p>
-                <button
-                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  onClick={() => setShowEncounterForm(true)}
-                >
-                  Create Encounter
-                </button>
-              </div>
-            )} */}
+      {/* --- START OF NEW SUGGESTIONS CARD --- */}
+      {/* This Card will wrap all your measure reports */}
+      <Card>
+        <CardContent>
+          {/* Header for the collapsible Suggestions section */}
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowSuggestions(!showSuggestions)} // Toggle visibility on click
+          >
+            <h2 className="text-xl font-semibold">✨ Suggestions</h2>
+            <button className="text-xl font-bold">
+              {showSuggestions ? "▲" : "▼"} {/* Up or Down arrow based on state */}
+            </button>
           </div>
-        )
-      }{" "}
+          {/* Conditionally render the content based on showSuggestions state */}
+          {showSuggestions && (
+            <div className="mt-4">
+              {measureReport && (
+                <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
+                    {/* <button
+                      onClick={refreshMeasureReport}
+                      className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
+                      title="Refresh measure report"
+                    >
+                      🔄 Refresh
+                    </button>{" "}
+                    {loading && (
+                      <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
+                        <p>Evaluating measure...</p>
+                      </div>
+                    )} */}
+                    <button
+                      onClick={() => setShowDeveloperView(!showDeveloperView)}
+                      className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
+                    >
+                      {showDeveloperView ? "Practitioner View" : "Developer View"}
+                    </button>
+                  </div>
+
+                  {/* Guidance Banner - Shows immediately what action is needed */}
+                  {/* {measureGuidance && (
+                  <div
+                    className={`mb-3 p-3 rounded-lg ${
+                      measureGuidance.priority === "action"
+                        ? "bg-amber-50 border border-amber-200 text-amber-900"
+                        : "bg-green-50 border border-green-200 text-green-900"
+                    }`}
+                  >
+                    <div className="flex items-start">
+                      <span className="text-lg mr-2">
+                        {measureGuidance.priority === "action" ? "⚠️" : "✅"}
+                      </span>
+                      <div>
+                        <p className="font-medium">{measureGuidance.message}</p>
+                        {measureGuidance.action && (
+                          <p className="text-sm mt-1">
+                            <strong>Action needed:</strong> {measureGuidance.action}
+                            {measureGuidance.action === "Document tobacco use status" && (
+                              <button
+                                onClick={() => setShowSmokingForm(true)}
+                                className="ml-2 text-sm underline hover:no-underline"
+                              >
+                                Update now →
+                              </button>
+                            )}
+                            {measureGuidance.action === "Create a qualifying encounter" && (
+                              <button
+                                onClick={() => setShowEncounterForm(true)}
+                                className="ml-2 text-sm underline hover:no-underline"
+                              >
+                                Create now →
+                              </button>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )} */}
+                  {/* Add the debug section here */}
+                  {/* {selectedPatientId && (
+                  <div className="mb-4 p-4 bg-yellow-50 border rounded">
+                    <h4>🔧 Debug Info</h4>
+                    <p>
+                      <strong>Patient ID:</strong> {selectedPatientId}
+                    </p>
+                    <p>
+                      <strong>Patient Name:</strong> {patient?.name?.[0]?.given?.join(" ")}{" "}
+                      {patient?.name?.[0]?.family}
+                    </p>
+                    <p>
+                      <strong>Patient Age:</strong>{" "}
+                      {patient?.birthDate
+                        ? new Date().getFullYear() - new Date(patient.birthDate).getFullYear()
+                        : "Unknown"}
+                    </p>
+                    <p>
+                      <strong>Guidance Loading:</strong> {guidanceLoading ? "Yes" : "No"}
+                    </p>
+                    <p>
+                      <strong>Has Enhanced Guidance:</strong> {enhancedGuidance ? "Yes" : "No"}
+                    </p>
+                    {enhancedGuidance && (
+                      <>
+                        <p>
+                          <strong>Enhanced Patient Name:</strong> {enhancedGuidance.patientName}
+                        </p>
+                        <p>
+                          <strong>Enhanced Patient Age:</strong> {enhancedGuidance.patientAge}
+                        </p>
+                        <p>
+                          <strong>Enhanced Status:</strong> {enhancedGuidance.status}
+                        </p>
+                        <p>
+                          <strong>Is Enhanced:</strong> {enhancedGuidance.isEnhanced ? "Yes" : "No"}
+                        </p>
+                        <p>
+                          <strong>Recommendations Count:</strong>{" "}
+                          {enhancedGuidance.recommendations?.length || 0}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )} */}
+
+                  {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
+                  {/* {guidanceLoading ? (
+                  <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
+                    <div className="flex items-center">
+                      <span className="animate-spin mr-2">🔄</span>
+                      <span>Analyzing measure requirements...</span>
+                    </div>
+                  </div>
+                ) : enhancedGuidance ? (
+                  <EnhancedGuidanceBanner
+                    guidance={enhancedGuidance}
+                    onCreateEncounter={() => setShowEncounterForm(true)}
+                    onDocumentScreening={() => setShowSmokingForm(true)}
+                  />
+                ) : null} */}
+
+                  {/* <p className="mb-2">
+                  <strong>Status:</strong> {measureReport.status}
+                </p> */}
+                  <p className="mb-2">
+                    <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)}{" "}
+                    to {measureReport.period?.end?.slice(0, 10)}
+                  </p>
+
+                  {showDeveloperView ? (
+                    // Developer View - Show measure logic highlighting and raw group data
+                    <div className="space-y-4">
+                      {" "}
+                      {/* This div provides vertical spacing between the cards */}
+                      {/* Raw Group Data Card */}
+                      <Card>
+                        <CardContent>
+                          {" "}
+                          {/* Assuming CardContent is used for inner padding/structure */}
+                          <h4 className="font-semibold mb-2">Raw Group Data:</h4>
+                          {measureReport.group?.map((group: any, i: number) => (
+                            <div key={i} className="mb-2">
+                              <h5 className="font-bold">Group {i + 1}</h5>
+                              <ul className="ml-4 list-disc">
+                                {group.population?.map((pop: any, j: number) => (
+                                  <li key={j}>
+                                    {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                      {/* Measure Logic Highlighting Card */}
+                      <Card>
+                        <CardContent>
+                          {" "}
+                          {/* Assuming CardContent is used for inner padding/structure */}
+                          <MeasureLogicHighlighting
+                            measureId="CMS138FHIRPreventiveTobaccoCessation"
+                            patientId={selectedPatientId}
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    // Practitioner View - User-friendly display (remains unchanged here)
+                    <>
+                      {/* Group 1: Tobacco History */}
+                      {measureReport.group?.[0] && (
+                        <div className="mb-4 p-3 bg-white rounded">
+                          <h3 className="font-bold mb-2">#1 Tobacco History Documentation</h3>
+                          <div className="space-y-1">
+                            <p>
+                              • Should have tobacco history:{" "}
+                              {getPopulationValue(measureReport.group[0], "denominator")
+                                ? "✓ Yes"
+                                : "✗ No"}
+                            </p>
+                            <p>
+                              • Excluded from tobacco history:{" "}
+                              {getPopulationValue(measureReport.group[0], "denominator-exclusion")
+                                ? "✓ Yes"
+                                : "✗ No"}
+                            </p>
+                            <p>
+                              • Has tobacco history in current year:{" "}
+                              {getPopulationValue(measureReport.group[0], "numerator")
+                                ? "✓ Yes"
+                                : "✗ No"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Group 2: Tobacco Intervention */}
+                      {measureReport.group?.[1] && (
+                        <div className="mb-4 p-3 bg-white rounded">
+                          <h3 className="font-bold mb-2">#2 Tobacco Intervention</h3>
+                          <div className="space-y-1">
+                            <p>
+                              • Should have tobacco intervention:{" "}
+                              {getPopulationValue(measureReport.group[1], "denominator")
+                                ? "✓ Yes"
+                                : "✗ No"}
+                            </p>
+                            <p>
+                              • Excluded from tobacco intervention:{" "}
+                              {getPopulationValue(measureReport.group[1], "denominator-exclusion")
+                                ? "✓ Yes"
+                                : "✗ No"}
+                            </p>
+                            <p>
+                              • Got tobacco intervention:{" "}
+                              {getPopulationValue(measureReport.group[1], "numerator")
+                                ? "✓ Yes"
+                                : "✗ No"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Show encounter prompt if no qualifying encounters */}
+                  {/* {patient &&
+                  measureReport?.group?.every((group: any) =>
+                    group.population.every((pop: any) => pop.count === 0)
+                  ) &&
+                  isPatientAgeEligibleForTobaccoScreening(patient, measureReport.period?.start || "") && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-300 text-blue-800 rounded">
+                      <p className="mb-2">
+                        This patient has no qualifying encounters documented in 2025. Would you like to
+                        create a qualifying office visit now to ensure they are counted in this measure?
+                      </p>
+                      <button
+                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        onClick={() => setShowEncounterForm(true)}
+                      >
+                        Create Encounter
+                      </button>
+                    </div>
+                  )} */}
+                </div>
+              )}{" "}
+              {/* <--- This closes the `measureReport &&` conditional */}
+              {/* Add future reports here */}
+            </div>
+          )}{" "}
+          {/* <--- This closes the `showSuggestions &&` conditional */}
+        </CardContent>
+      </Card>{" "}
+      {/* --- END OF NEW SUGGESTIONS CARD --- */}
       {showEncounterForm && (
         <div className="mb-4 p-4 border rounded bg-white shadow">
           <h3 className="text-lg font-semibold mb-2">📝 New Encounter Form</h3>
