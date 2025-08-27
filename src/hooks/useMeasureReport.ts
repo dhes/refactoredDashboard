@@ -19,8 +19,10 @@ export const useMeasureReport = (patientId: string | undefined, measureId: strin
     setError(null);
     
     const currentYear = new Date().getFullYear();
-    const periodStart = `${currentYear}-01-01`;
-    const periodEnd = `${currentYear}-12-31`;
+    // const periodStart = `${currentYear}-01-01`;
+    // const periodEnd = `${currentYear}-12-31`;
+    const periodStart = '2026-01-01';
+    const periodEnd = '2026-12-31';
     
     fhirClient.evaluateMeasure(measureId, patientId, periodStart, periodEnd)
       .then(report => {

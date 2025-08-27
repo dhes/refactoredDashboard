@@ -19,7 +19,8 @@ import {
 import type { AllergyIntolerance, Condition, MedicationStatement, FamilyMemberHistory, Immunization } from 'fhir/r4';
 
 // Configuration - adjust to match your server
-const FHIR_SERVER = 'http://localhost:8080/fhir'; // Update this to match your HAPI server
+// const FHIR_SERVER = 'http://localhost:8080/fhir'; // Update this to match your HAPI server
+const FHIR_SERVER = 'https://enhanced.hopena.info/fhir'; // Update this to match your HAPI server
 
 // Generic FHIR fetch function (based on your existing implementation)
 async function fetchFHIR<T>(resourceType: string, searchParams: string): Promise<T[]> {

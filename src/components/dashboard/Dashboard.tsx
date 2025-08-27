@@ -38,6 +38,8 @@ import { useQualityAnalytics, usePopulationAnalysis } from "../../hooks/useQuali
 import MeasureAnalysis from "./MeasureAnalysis";
 import EnhancedGuidanceBanner from "./EnhancedGuidanceBanner";
 import { MeasureLogicHighlighting } from "./MeasureLogicHighlighting";
+import { useCDSHooks } from "../../hooks/useCDSHooks";
+import { CDSCard } from "./CDSCard";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -74,6 +76,12 @@ const Dashboard = () => {
   const { procedures, loading: proceduresLoading } = useProcedures(selectedPatientId);
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
+  const {
+    cards: cdsCards,
+    loading: cdsLoading,
+    error: cdsError,
+    refresh: refreshCDS,
+  } = useCDSHooks(selectedPatientId);
   // const measureGuidance =
   //   patient && measureReport ? getCMS138Guidance(measureReport, patient) : null;
   // const { guidance: enhancedGuidance, loading: guidanceLoading } = useEnhancedGuidance(
@@ -646,7 +654,63 @@ const Dashboard = () => {
                 </div>
               )}{" "}
               {/* <--- This closes the `measureReport &&` conditional */}
-              {/* Add future reports here */}
+              {/* CDS Hooks Recommendations */}
+              {cdsLoading && (
+                <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
+                  <div className="flex items-center">
+                    <span className="animate-spin mr-2">🔄</span>
+                    <span>Loading clinical recommendations...</span>
+                  </div>
+                </div>
+              )}
+              {cdsError && (
+                <div className="mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-900">
+                  <div className="flex items-start">
+                    <span className="text-lg mr-2">⚠️</span>
+                    <div>
+                      <p className="font-medium">Unable to load recommendations</p>
+                      <p className="text-sm mt-1">{cdsError}</p>
+                      <button
+                        onClick={refreshCDS}
+                        className="text-sm mt-2 px-2 py-1 bg-red-100 hover:bg-red-200 rounded"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {cdsCards.map((card, index) => (
+                <CDSCard
+                  key={index}
+                  card={card}
+                  onActionClick={(action) => {
+                    console.log("CDS card action clicked:", action);
+
+                    // Handle different types of actions
+                    if (
+                      action.type === "create-encounter" ||
+                      action.card?.detail?.toLowerCase().includes("encounter")
+                    ) {
+                      setShowEncounterForm(true);
+                    }
+
+                    // Add other action handlers as needed
+                  }}
+                />
+              ))}
+              {/* Add refresh button if there are CDS cards */}
+              {cdsCards.length > 0 && (
+                <div className="mt-2 flex justify-end">
+                  <button
+                    onClick={refreshCDS}
+                    className="text-sm px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+                    title="Refresh clinical recommendations"
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
+              )}
             </div>
           )}{" "}
           {/* <--- This closes the `showSuggestions &&` conditional */}
