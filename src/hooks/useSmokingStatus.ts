@@ -15,17 +15,11 @@ export const useSmokingStatus = (patientId: string | undefined) => {
     setLoading(true);
     setError(null);
     
-    // This already filters for smoking status code
-    fhirClient.getObservations(patientId, 'http://loinc.org|72166-2')
-      .then(observations => {
-        setAllSmokingObs(observations);
-        // Get the most recent
-        const latest = observations.sort((a, b) => {
-          const dateA = a.effectiveDateTime || '';
-          const dateB = b.effectiveDateTime || '';
-          return dateB.localeCompare(dateA);
-        })[0] || null;
+    // Use the enhanced smoking status method that searches all LOINC codes
+    fhirClient.getSmokingStatus(patientId)
+      .then(({latest, all}) => {
         setSmokingStatus(latest);
+        setAllSmokingObs(all);
       })
       .catch(setError)
       .finally(() => setLoading(false));
