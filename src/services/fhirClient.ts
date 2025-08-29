@@ -17,6 +17,8 @@ import type {
   AllergyIntolerance,
   Condition,
   MedicationStatement,
+  MedicationRequest,
+  ServiceRequest,
   FamilyMemberHistory,
   Immunization,
 } from "fhir/r4";
@@ -95,6 +97,24 @@ class FHIRClient {
   // MedicationStatement operations
   async getMedications(patientId: string): Promise<MedicationStatement[]> {
     return fetchFHIR<MedicationStatement>("MedicationStatement", `patient=Patient/${patientId}`);
+  }
+
+  // MedicationRequest operations
+  async getMedicationRequests(patientId: string): Promise<MedicationRequest[]> {
+    return fetchFHIR<MedicationRequest>("MedicationRequest", `patient=Patient/${patientId}`);
+  }
+
+  async createMedicationRequest(medicationRequest: MedicationRequest): Promise<MedicationRequest> {
+    return createFHIR(medicationRequest);
+  }
+
+  // ServiceRequest operations
+  async getServiceRequests(patientId: string): Promise<ServiceRequest[]> {
+    return fetchFHIR<ServiceRequest>("ServiceRequest", `patient=Patient/${patientId}`);
+  }
+
+  async createServiceRequest(serviceRequest: ServiceRequest): Promise<ServiceRequest> {
+    return createFHIR(serviceRequest);
   }
 
   // AllergyIntolerance operations

@@ -40,6 +40,10 @@ import EnhancedGuidanceBanner from "./EnhancedGuidanceBanner";
 import { MeasureLogicHighlighting } from "./MeasureLogicHighlighting";
 import { useCDSHooks } from "../../hooks/useCDSHooks";
 import { CDSCard } from "./CDSCard";
+import { EncounterPane } from "./EncounterPane";
+import { MedicationRequestPane } from "./MedicationRequestPane";
+import { ServiceRequestPane } from "./ServiceRequestPane";
+import { HospicePane } from "./HospicePane";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -904,7 +908,20 @@ const Dashboard = () => {
               Update Smoking Status
             </button>
           )}
-        </Card>{" "}
+        </Card>
+        
+        {/* Recent Encounters */}
+        <EncounterPane patientId={selectedPatientId} />
+        
+        {/* Medication Requests */}
+        <MedicationRequestPane patientId={selectedPatientId} />
+        
+        {/* Service Requests */}
+        <ServiceRequestPane patientId={selectedPatientId} />
+        
+        {/* Hospice Status */}
+        <HospicePane patientId={selectedPatientId} />
+        
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">⚠️ Allergies</h2>
