@@ -9,7 +9,7 @@ export const useAvailablePatients = () => {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    fhirClient.searchPatients("")
+    fhirClient.searchPatients("_count=100")
       .then(setPatients)
       .catch(setError)
       .finally(() => setLoading(false));

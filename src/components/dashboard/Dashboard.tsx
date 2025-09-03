@@ -26,6 +26,8 @@ import { useImmunizations } from "../../hooks/useImmunizations";
 import { useProcedures } from "../../hooks/useProcedures";
 import { useLabs } from "../../hooks/useLabs";
 import { useSmokingStatus } from "../../hooks/useSmokingStatus";
+import { usePatientAge } from "../../hooks/usePatientAge";
+import { formatAgeDisplay } from "../../utils/ageCalculation";
 import {
   getPopulationValue,
   // isPatientAgeEligibleForTobaccoScreening,
@@ -43,7 +45,7 @@ import { CDSCard } from "./CDSCard";
 import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
-import { HospicePane } from "./HospicePane";
+import { EnhancedHospicePane } from "./EnhancedHospicePane";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -80,6 +82,7 @@ const Dashboard = () => {
   const { procedures, loading: proceduresLoading } = useProcedures(selectedPatientId);
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
+  const { ageResult, loading: ageLoading } = usePatientAge(selectedPatientId, patient?.birthDate);
   const {
     cards: cdsCards,
     loading: cdsLoading,
@@ -787,12 +790,38 @@ const Dashboard = () => {
       )}
       {patient && (
         <div className="mb-4 p-4 bg-white shadow rounded">
-          <h2 className="text-xl font-semibold">👤 Patient</h2>
-          <p>
-            {patient.name?.[0]?.given?.join(" ")} {patient.name?.[0]?.family}
-          </p>
-          <p>DOB: {patient.birthDate}</p>
-          <p>Gender: {patient.gender}</p>
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-xl font-semibold">👤 Patient</h2>
+            {ageResult?.measurementPeriod && (
+              <div className="text-sm text-gray-600">
+                MP {ageResult.measurementPeriod.start.slice(0, 4)}
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg font-medium">
+              {patient.name?.[0]?.given?.join(" ")} {patient.name?.[0]?.family}
+            </p>
+            <p>
+              <span className="font-medium">DOB:</span> {patient.birthDate}
+            </p>
+            <p>
+              <span className="font-medium">Gender:</span> {patient.gender}
+            </p>
+            {ageLoading ? (
+              <p>
+                <span className="font-medium">Age:</span> <span className="animate-pulse">Calculating...</span>
+              </p>
+            ) : ageResult ? (
+              <p>
+                <span className="font-medium">Age:</span> {formatAgeDisplay(ageResult.currentAge!, ageResult.mpStartAge!)}
+              </p>
+            ) : patient.birthDate ? (
+              <p>
+                <span className="font-medium">Age:</span> {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} years
+              </p>
+            ) : null}
+          </div>
         </div>
       )}
       {/*Smoking Status Card - Always visible*/}
@@ -919,8 +948,8 @@ const Dashboard = () => {
         {/* Service Requests */}
         <ServiceRequestPane patientId={selectedPatientId} />
         
-        {/* Hospice Status */}
-        <HospicePane patientId={selectedPatientId} />
+        {/* Enhanced Hospice Status */}
+        <EnhancedHospicePane patientId={selectedPatientId} />
         
         <Card>
           <CardContent>
@@ -1046,7 +1075,25 @@ const Dashboard = () => {
                               getDisplayText(c.code).replace(/\s*\(procedure\)$/i, "")
                             ),
                           ].join(" with ");
-                          return <li key={p.id}>{description}</li>;
+                          
+                          // Get the primary code for display
+                          const primaryCode = p.code?.coding?.[0]?.code;
+                          const codeSystem = p.code?.coding?.[0]?.system;
+                          const codeDisplay = primaryCode ? 
+                            (codeSystem ? `${codeSystem.split('/').pop()}:${primaryCode}` : primaryCode) : '';
+                          
+                          return (
+                            <li key={p.id}>
+                              <div className="flex items-center gap-2">
+                                <span>{description}</span>
+                                {codeDisplay && (
+                                  <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 font-mono">
+                                    {codeDisplay}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          );
                         })}
                       </ul>
                     </li>

@@ -235,6 +235,23 @@ class FHIRClient {
     return this.createObservation(observation);
   }
 
+  // Library operations
+  async evaluateLibrary(
+    libraryId: string,
+    patientId: string,
+    periodStart: string,
+    periodEnd: string
+  ): Promise<any> {
+    const url = `${FHIR_SERVER}/Library/${libraryId}/$evaluate?subject=Patient/${patientId}&periodStart=${periodStart}&periodEnd=${periodEnd}`;
+    const res = await fetch(url, { method: "GET" });
+
+    if (!res.ok) {
+      throw new Error(`Failed to evaluate library: ${res.statusText}`);
+    }
+
+    return res.json();
+  }
+
   // Bundle operations for efficient fetching
   async getPatientEverything(patientId: string): Promise<Bundle> {
     const res = await fetch(`${FHIR_SERVER}/Patient/${patientId}/$everything`);
