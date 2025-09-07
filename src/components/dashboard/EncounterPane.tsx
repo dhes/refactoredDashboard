@@ -2,13 +2,15 @@
 import React from 'react';
 import { Card } from '../ui/card';
 import { useEncounters, type EnhancedEncounter } from '../../hooks/useEncounters';
+import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 interface EncounterPaneProps {
   patientId: string;
 }
 
 export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
-  const { enhancedEncounters, encountersInMP, measurementPeriod, loading, error } = useEncounters(patientId);
+  const { enhancedEncounters, encountersInMP, measurementPeriod: hookMeasurementPeriod, loading, error } = useEncounters(patientId);
+  const { measurementPeriod } = useMeasurementPeriod();
 
   if (loading) {
     return (
@@ -36,16 +38,14 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
     );
   }
 
-  const formatMeasurementPeriod = (period: { start: string; end: string }) => {
-    return "2026"; // Hard-coded for MADiE test case inspection
-  };
+  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Recent Encounters</h3>
         <div className="text-sm text-gray-600">
-          MP {formatMeasurementPeriod(measurementPeriod)}: {encountersInMP} encounters
+          MP {formatMeasurementPeriod()}: {encountersInMP} encounters
         </div>
       </div>
 

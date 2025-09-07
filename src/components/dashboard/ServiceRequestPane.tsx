@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card } from '../ui/card';
 import { useServiceRequests, type EnhancedServiceRequest } from '../../hooks/useServiceRequests';
+import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 interface ServiceRequestPaneProps {
   patientId: string;
@@ -11,10 +12,11 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
   const { 
     enhancedServiceRequests, 
     serviceRequestsInMP, 
-    measurementPeriod, 
+    measurementPeriod: hookMeasurementPeriod, 
     loading, 
     error 
   } = useServiceRequests(patientId);
+  const { measurementPeriod } = useMeasurementPeriod();
 
   if (loading) {
     return (
@@ -42,16 +44,14 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
     );
   }
 
-  const formatMeasurementPeriod = (period: { start: string; end: string }) => {
-    return "2026"; // Hard-coded for MADiE test case inspection
-  };
+  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">🩺 Service Requests</h3>
         <div className="text-sm text-gray-600">
-          MP {formatMeasurementPeriod(measurementPeriod)}: {serviceRequestsInMP} requests
+          MP {formatMeasurementPeriod()}: {serviceRequestsInMP} requests
         </div>
       </div>
 

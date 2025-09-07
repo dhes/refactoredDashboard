@@ -2,12 +2,16 @@
 import { useState, useEffect } from 'react';
 import type { MeasureReport } from '../types/fhir';
 import { fhirClient } from '../services/fhirClient';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
 
 export const useMeasureReport = (patientId: string | undefined, measureId: string) => {
   const [measureReport, setMeasureReport] = useState<MeasureReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Get measurement period from context
+  const { measurementPeriod } = useMeasurementPeriod();
   
   useEffect(() => {
     if (!patientId) {
@@ -18,11 +22,8 @@ export const useMeasureReport = (patientId: string | undefined, measureId: strin
     setLoading(true);
     setError(null);
     
-    const currentYear = new Date().getFullYear();
-    // const periodStart = `${currentYear}-01-01`;
-    // const periodEnd = `${currentYear}-12-31`;
-    const periodStart = '2026-01-01';
-    const periodEnd = '2026-12-31';
+    const periodStart = measurementPeriod.start;
+    const periodEnd = measurementPeriod.end;
     
     fhirClient.evaluateMeasure(measureId, patientId, periodStart, periodEnd)
       .then(report => {
@@ -35,7 +36,7 @@ export const useMeasureReport = (patientId: string | undefined, measureId: strin
         setMeasureReport(null);
       })
       .finally(() => setLoading(false));
-  }, [patientId, measureId, refreshTrigger]); // Add refreshTrigger to dependencies
+  }, [patientId, measureId, refreshTrigger, measurementPeriod]); // Add refreshTrigger to dependencies
   
   const refresh = () => setRefreshTrigger(prev => prev + 1);
   

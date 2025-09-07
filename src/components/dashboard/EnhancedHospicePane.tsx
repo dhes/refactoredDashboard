@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card } from '../ui/card';
 import { useHospiceEvaluation } from '../../hooks/useHospiceEvaluation';
 import { HOSPICE_CATEGORIES, type HospiceEvidence } from '../../utils/hospiceEvidenceExtractor';
+import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 interface EnhancedHospicePaneProps {
   patientId: string;
@@ -11,11 +12,13 @@ interface EnhancedHospicePaneProps {
 export const EnhancedHospicePane: React.FC<EnhancedHospicePaneProps> = ({ patientId }) => {
   const { 
     hospiceResult, 
-    measurementPeriod, 
+    measurementPeriod: hookMeasurementPeriod, 
     loading, 
     error,
     getEvidenceSummary 
   } = useHospiceEvaluation(patientId);
+  
+  const { measurementPeriod } = useMeasurementPeriod();
 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
@@ -63,7 +66,7 @@ export const EnhancedHospicePane: React.FC<EnhancedHospicePaneProps> = ({ patien
     );
   }
 
-  const formatMeasurementPeriod = () => "2026"; // Hard-coded for MADiE test cases
+  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
     <Card className="p-6">

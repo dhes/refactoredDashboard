@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { ServiceRequest } from '../types/fhir';
 import { fhirClient } from '../services/fhirClient';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
 
 // Enhanced service request type for display
 export interface EnhancedServiceRequest extends ServiceRequest {
@@ -17,11 +18,8 @@ export const useServiceRequests = (patientId: string | undefined) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Define measurement period (2026 for now)
-  const measurementPeriod = {
-    start: '2026-01-01',
-    end: '2026-12-31'
-  };
+  // Get measurement period from context
+  const { measurementPeriod } = useMeasurementPeriod();
 
   useEffect(() => {
     if (!patientId) {
@@ -75,7 +73,7 @@ export const useServiceRequests = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId]);
+  }, [patientId, measurementPeriod]);
 
   // Count service requests in measurement period
   const serviceRequestsInMP = enhancedServiceRequests.filter(sr => sr.inMeasurementPeriod).length;

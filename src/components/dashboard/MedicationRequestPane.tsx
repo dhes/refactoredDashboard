@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card } from '../ui/card';
 import { useMedicationRequests, type EnhancedMedicationRequest } from '../../hooks/useMedicationRequests';
+import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 interface MedicationRequestPaneProps {
   patientId: string;
@@ -11,10 +12,11 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
   const { 
     enhancedMedicationRequests, 
     medicationRequestsInMP, 
-    measurementPeriod, 
+    measurementPeriod: hookMeasurementPeriod, 
     loading, 
     error 
   } = useMedicationRequests(patientId);
+  const { measurementPeriod } = useMeasurementPeriod();
 
   if (loading) {
     return (
@@ -42,16 +44,14 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
     );
   }
 
-  const formatMeasurementPeriod = (period: { start: string; end: string }) => {
-    return "2026"; // Hard-coded for MADiE test case inspection
-  };
+  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
         <div className="text-sm text-gray-600">
-          MP {formatMeasurementPeriod(measurementPeriod)}: {medicationRequestsInMP} requests
+          MP {formatMeasurementPeriod()}: {medicationRequestsInMP} requests
         </div>
       </div>
 

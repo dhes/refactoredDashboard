@@ -25,7 +25,8 @@ import type {
 
 // Configuration - adjust to match your server
 // const FHIR_SERVER = 'http://localhost:8080/fhir'; // Update this to match your HAPI server
-const FHIR_SERVER = "https://enhanced.hopena.info/fhir"; // Update this to match your HAPI server
+// const FHIR_SERVER = "https://enhanced.hopena.info/fhir"; // Direct (CORS issues)
+const FHIR_SERVER = "/fhir"; // Proxied through Vite dev server
 
 // Generic FHIR fetch function (based on your existing implementation)
 async function fetchFHIR<T>(resourceType: string, searchParams: string): Promise<T[]> {
@@ -242,8 +243,40 @@ class FHIRClient {
     periodStart: string,
     periodEnd: string
   ): Promise<any> {
-    const url = `${FHIR_SERVER}/Library/${libraryId}/$evaluate?subject=Patient/${patientId}&periodStart=${periodStart}&periodEnd=${periodEnd}`;
-    const res = await fetch(url, { method: "GET" });
+    const url = `${FHIR_SERVER}/Library/${libraryId}/$evaluate`;
+    
+    const requestBody = {
+      resourceType: "Parameters",
+      parameter: [
+        {
+          name: "subject",
+          valueString: `Patient/${patientId}`
+        },
+        {
+          name: "parameters",
+          resource: {
+            resourceType: "Parameters",
+            parameter: [
+              {
+                name: "Measurement Period",
+                valuePeriod: {
+                  start: periodStart,
+                  end: periodEnd
+                }
+              }
+            ]
+          }
+        }
+      ]
+    };
+
+    const res = await fetch(url, { 
+      method: "POST",
+      headers: {
+        "Content-Type": "application/fhir+json"
+      },
+      body: JSON.stringify(requestBody)
+    });
 
     if (!res.ok) {
       throw new Error(`Failed to evaluate library: ${res.statusText}`);

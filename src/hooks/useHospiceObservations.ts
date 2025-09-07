@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { Observation } from '../types/fhir';
 import { fhirClient } from '../services/fhirClient';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
 
 // Enhanced hospice observation type for display
 export interface EnhancedHospiceObservation extends Observation {
@@ -18,11 +19,8 @@ export const useHospiceObservations = (patientId: string | undefined) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Define measurement period (2026 for now)
-  const measurementPeriod = {
-    start: '2026-01-01',
-    end: '2026-12-31'
-  };
+  // Get measurement period from context
+  const { measurementPeriod } = useMeasurementPeriod();
 
   // Hospice care LOINC code
   const HOSPICE_LOINC_CODE = 'http://loinc.org|45755-6';
@@ -80,7 +78,7 @@ export const useHospiceObservations = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId]);
+  }, [patientId, measurementPeriod]);
 
   // Helper function to check if effective period overlaps measurement period
   const checkOverlapWithMP = (obs: Observation, mp: { start: string; end: string }): boolean => {

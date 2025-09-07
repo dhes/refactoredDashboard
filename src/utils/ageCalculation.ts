@@ -29,7 +29,7 @@ export function calculateCurrentAge(birthDate: string): number {
  */
 export function formatAgeDisplay(currentAge: number, mpStartAge?: number): string {
   if (mpStartAge !== undefined && mpStartAge !== currentAge) {
-    return `${currentAge} years (was ${mpStartAge} at MP start)`;
+    return `${currentAge} years (${mpStartAge} at MP start)`;
   }
   return `${currentAge} years`;
 }

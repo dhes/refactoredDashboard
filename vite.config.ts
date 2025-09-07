@@ -11,6 +11,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      "/fhir": {
+        target: "https://enhanced.hopena.info",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/fhir/, '/fhir'),
+      },
     },
   },
 });

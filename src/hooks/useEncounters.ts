@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import type { Encounter } from '../types/fhir';
 import { fhirClient } from '../services/fhirClient';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
 
 // Enhanced encounter type for display
 export interface EnhancedEncounter extends Encounter {
@@ -17,11 +18,8 @@ export const useEncounters = (patientId: string | undefined) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Define measurement period (2026 for now)
-  const measurementPeriod = {
-    start: '2026-01-01',
-    end: '2026-12-31'
-  };
+  // Get measurement period from context
+  const { measurementPeriod } = useMeasurementPeriod();
 
   useEffect(() => {
     if (!patientId) {
@@ -64,7 +62,7 @@ export const useEncounters = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId]);
+  }, [patientId, measurementPeriod]);
 
   // Utility: Check if patient has recent encounter
   const hasRecentEncounter = encounters.some(e => {

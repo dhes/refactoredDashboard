@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { fhirClient } from '../services/fhirClient';
 import { processHospiceEvidence, type HospiceEvidence } from '../utils/hospiceEvidenceExtractor';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
 
 export interface HospiceEvaluationResult {
   hasHospiceServices: boolean;
@@ -15,11 +16,8 @@ export const useHospiceEvaluation = (patientId: string | undefined) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Define measurement period (2026 for MADiE test cases)
-  const measurementPeriod = {
-    start: '2026-01-01',
-    end: '2026-12-31'
-  };
+  // Get measurement period from context
+  const { measurementPeriod } = useMeasurementPeriod();
 
   useEffect(() => {
     if (!patientId) {
@@ -45,7 +43,7 @@ export const useHospiceEvaluation = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId]);
+  }, [patientId, measurementPeriod]);
 
   // Utility functions
   const getEvidenceCountByType = (category: string): number => {

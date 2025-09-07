@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card } from '../ui/card';
 import { useHospiceObservations, type EnhancedHospiceObservation } from '../../hooks/useHospiceObservations';
+import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 interface HospicePaneProps {
   patientId: string;
@@ -12,10 +13,11 @@ export const HospicePane: React.FC<HospicePaneProps> = ({ patientId }) => {
     enhancedHospiceObservations, 
     qualifyingHospiceObs,
     hasQualifyingHospiceStatus,
-    measurementPeriod, 
+    measurementPeriod: hookMeasurementPeriod, 
     loading, 
     error 
   } = useHospiceObservations(patientId);
+  const { measurementPeriod } = useMeasurementPeriod();
 
   if (loading) {
     return (
@@ -41,9 +43,7 @@ export const HospicePane: React.FC<HospicePaneProps> = ({ patientId }) => {
     );
   }
 
-  const formatMeasurementPeriod = (period: { start: string; end: string }) => {
-    return "2026"; // Hard-coded for MADiE test case inspection
-  };
+  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
     <Card className="p-6">
@@ -51,7 +51,7 @@ export const HospicePane: React.FC<HospicePaneProps> = ({ patientId }) => {
         <h3 className="text-lg font-semibold">🏠 Hospice Status</h3>
         <div className="flex items-center gap-2">
           <div className="text-sm text-gray-600">
-            MP {formatMeasurementPeriod(measurementPeriod)}: {qualifyingHospiceObs} assessments
+            MP {formatMeasurementPeriod()}: {qualifyingHospiceObs} assessments
           </div>
           {hasQualifyingHospiceStatus && (
             <div className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800 font-medium">

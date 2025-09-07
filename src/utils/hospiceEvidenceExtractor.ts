@@ -88,8 +88,8 @@ export function processHospiceEvidence(evaluateResponse: any): {
       continue;
     }
 
-    // Process evidence categories
-    if (param.name.startsWith('With') && param.resource) {
+    // Process evidence categories (skip Patient resource)
+    if (param.resource && param.resource.resourceType !== 'Patient') {
       const resource = param.resource;
       const extractor = resourceExtractors[resource.resourceType as keyof typeof resourceExtractors];
 
@@ -141,7 +141,7 @@ export const HOSPICE_CATEGORIES = {
     icon: '🏠',
     description: 'Direct hospice care encounters'
   },
-  'WithHospiceAssessment': {
+  'Hospice Assessment': {
     label: 'Hospice Assessments',
     icon: '📋',
     description: 'Hospice care assessments and screenings'
