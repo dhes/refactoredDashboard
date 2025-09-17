@@ -1,6 +1,6 @@
 // src/components/dashboard/ServiceRequestPane.tsx
-import React from 'react';
-import { Card } from '../ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '../ui/card';
 import { useServiceRequests, type EnhancedServiceRequest } from '../../hooks/useServiceRequests';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
@@ -9,6 +9,7 @@ interface ServiceRequestPaneProps {
 }
 
 export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientId }) => {
+  const [showServiceRequests, setShowServiceRequests] = useState(false); // Start closed by default
   const { 
     enhancedServiceRequests, 
     serviceRequestsInMP, 
@@ -20,26 +21,54 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">🩺 Service Requests</h3>
-        <div className="animate-pulse">
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+      <Card>
+        <CardContent>
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowServiceRequests(!showServiceRequests)}
+          >
+            <h3 className="text-lg font-semibold">🩺 Service Requests</h3>
+            <button className="text-xl font-bold">
+              {showServiceRequests ? "▲" : "▼"}
+            </button>
           </div>
-        </div>
+          {showServiceRequests && (
+            <div className="mt-4">
+              <div className="animate-pulse">
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-16 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }
 
   if (error) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">🩺 Service Requests</h3>
-        <div className="text-red-600">
-          Error loading service requests: {error.message}
-        </div>
+      <Card>
+        <CardContent>
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowServiceRequests(!showServiceRequests)}
+          >
+            <h3 className="text-lg font-semibold">🩺 Service Requests</h3>
+            <button className="text-xl font-bold">
+              {showServiceRequests ? "▲" : "▼"}
+            </button>
+          </div>
+          {showServiceRequests && (
+            <div className="mt-4">
+              <div className="text-red-600">
+                Error loading service requests: {error.message}
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }
@@ -47,31 +76,45 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
   const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">🩺 Service Requests</h3>
-        <div className="text-sm text-gray-600">
-          MP {formatMeasurementPeriod()}: {serviceRequestsInMP} requests
+    <Card>
+      <CardContent>
+        <div
+          className="flex justify-between items-center cursor-pointer"
+          onClick={() => setShowServiceRequests(!showServiceRequests)}
+        >
+          <h3 className="text-lg font-semibold">🩺 Service Requests</h3>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-600">
+              MP {formatMeasurementPeriod()}: {serviceRequestsInMP} requests
+            </div>
+            <button className="text-xl font-bold">
+              {showServiceRequests ? "▲" : "▼"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {enhancedServiceRequests.length === 0 ? (
-        <div className="text-gray-500 text-center py-8">
-          No service requests found for this patient
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {enhancedServiceRequests.map((request, index) => (
-            <ServiceRequestRow key={request.id || index} serviceRequest={request} />
-          ))}
-        </div>
-      )}
+        {showServiceRequests && (
+          <div className="mt-4">
+            {enhancedServiceRequests.length === 0 ? (
+              <div className="text-gray-500 text-center py-8">
+                No service requests found for this patient
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {enhancedServiceRequests.map((request, index) => (
+                  <ServiceRequestRow key={request.id || index} serviceRequest={request} />
+                ))}
+              </div>
+            )}
 
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
-        </div>
-      </div>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="text-xs text-gray-500">
+                Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 };

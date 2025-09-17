@@ -8,5 +8,3 @@ export type {
   MeasureEvaluationResult,
   PopulationAnalysisResult
 } from './qualityAnalyticsClient';
-
-export * from './cdsHooksService';

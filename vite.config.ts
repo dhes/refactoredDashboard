@@ -6,11 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/cds-services": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        secure: false,
-      },
       "/fhir": {
         target: "https://enhanced.hopena.info",
         changeOrigin: true,

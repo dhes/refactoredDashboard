@@ -1,6 +1,6 @@
 // src/components/dashboard/MedicationRequestPane.tsx
-import React from 'react';
-import { Card } from '../ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '../ui/card';
 import { useMedicationRequests, type EnhancedMedicationRequest } from '../../hooks/useMedicationRequests';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
@@ -9,6 +9,7 @@ interface MedicationRequestPaneProps {
 }
 
 export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ patientId }) => {
+  const [showMedicationRequests, setShowMedicationRequests] = useState(false); // Start closed by default
   const { 
     enhancedMedicationRequests, 
     medicationRequestsInMP, 
@@ -20,26 +21,54 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">💊 Medication Requests</h3>
-        <div className="animate-pulse">
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+      <Card>
+        <CardContent>
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowMedicationRequests(!showMedicationRequests)}
+          >
+            <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
+            <button className="text-xl font-bold">
+              {showMedicationRequests ? "▲" : "▼"}
+            </button>
           </div>
-        </div>
+          {showMedicationRequests && (
+            <div className="mt-4">
+              <div className="animate-pulse">
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-16 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }
 
   if (error) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">💊 Medication Requests</h3>
-        <div className="text-red-600">
-          Error loading medication requests: {error.message}
-        </div>
+      <Card>
+        <CardContent>
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowMedicationRequests(!showMedicationRequests)}
+          >
+            <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
+            <button className="text-xl font-bold">
+              {showMedicationRequests ? "▲" : "▼"}
+            </button>
+          </div>
+          {showMedicationRequests && (
+            <div className="mt-4">
+              <div className="text-red-600">
+                Error loading medication requests: {error.message}
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }
@@ -47,31 +76,45 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
   const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
-        <div className="text-sm text-gray-600">
-          MP {formatMeasurementPeriod()}: {medicationRequestsInMP} requests
+    <Card>
+      <CardContent>
+        <div
+          className="flex justify-between items-center cursor-pointer"
+          onClick={() => setShowMedicationRequests(!showMedicationRequests)}
+        >
+          <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-600">
+              MP {formatMeasurementPeriod()}: {medicationRequestsInMP} requests
+            </div>
+            <button className="text-xl font-bold">
+              {showMedicationRequests ? "▲" : "▼"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {enhancedMedicationRequests.length === 0 ? (
-        <div className="text-gray-500 text-center py-8">
-          No medication requests found for this patient
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {enhancedMedicationRequests.map((request, index) => (
-            <MedicationRequestRow key={request.id || index} medicationRequest={request} />
-          ))}
-        </div>
-      )}
+        {showMedicationRequests && (
+          <div className="mt-4">
+            {enhancedMedicationRequests.length === 0 ? (
+              <div className="text-gray-500 text-center py-8">
+                No medication requests found for this patient
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {enhancedMedicationRequests.map((request, index) => (
+                  <MedicationRequestRow key={request.id || index} medicationRequest={request} />
+                ))}
+              </div>
+            )}
 
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
-        </div>
-      </div>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="text-xs text-gray-500">
+                Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 };

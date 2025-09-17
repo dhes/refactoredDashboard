@@ -1,6 +1,6 @@
 // src/components/dashboard/EncounterPane.tsx
-import React from 'react';
-import { Card } from '../ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '../ui/card';
 import { useEncounters, type EnhancedEncounter } from '../../hooks/useEncounters';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
@@ -9,31 +9,60 @@ interface EncounterPaneProps {
 }
 
 export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
+  const [showEncounters, setShowEncounters] = useState(false); // Start closed by default
   const { enhancedEncounters, encountersInMP, measurementPeriod: hookMeasurementPeriod, loading, error } = useEncounters(patientId);
   const { measurementPeriod } = useMeasurementPeriod();
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Recent Encounters</h3>
-        <div className="animate-pulse">
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
-            ))}
+      <Card>
+        <CardContent>
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowEncounters(!showEncounters)}
+          >
+            <h3 className="text-lg font-semibold">Recent Encounters</h3>
+            <button className="text-xl font-bold">
+              {showEncounters ? "▲" : "▼"}
+            </button>
           </div>
-        </div>
+          {showEncounters && (
+            <div className="mt-4">
+              <div className="animate-pulse">
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-16 bg-gray-200 rounded"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }
 
   if (error) {
     return (
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Recent Encounters</h3>
-        <div className="text-red-600">
-          Error loading encounters: {error.message}
-        </div>
+      <Card>
+        <CardContent>
+          <div
+            className="flex justify-between items-center cursor-pointer"
+            onClick={() => setShowEncounters(!showEncounters)}
+          >
+            <h3 className="text-lg font-semibold">Recent Encounters</h3>
+            <button className="text-xl font-bold">
+              {showEncounters ? "▲" : "▼"}
+            </button>
+          </div>
+          {showEncounters && (
+            <div className="mt-4">
+              <div className="text-red-600">
+                Error loading encounters: {error.message}
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
     );
   }
@@ -41,31 +70,45 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
   const formatMeasurementPeriod = () => measurementPeriod.year.toString();
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Recent Encounters</h3>
-        <div className="text-sm text-gray-600">
-          MP {formatMeasurementPeriod()}: {encountersInMP} encounters
+    <Card>
+      <CardContent>
+        <div
+          className="flex justify-between items-center cursor-pointer"
+          onClick={() => setShowEncounters(!showEncounters)}
+        >
+          <h3 className="text-lg font-semibold">Recent Encounters</h3>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-600">
+              MP {formatMeasurementPeriod()}: {encountersInMP} encounters
+            </div>
+            <button className="text-xl font-bold">
+              {showEncounters ? "▲" : "▼"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {enhancedEncounters.length === 0 ? (
-        <div className="text-gray-500 text-center py-8">
-          No encounters found for this patient
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {enhancedEncounters.map((encounter, index) => (
-            <EncounterRow key={encounter.id || index} encounter={encounter} />
-          ))}
-        </div>
-      )}
+        {showEncounters && (
+          <div className="mt-4">
+            {enhancedEncounters.length === 0 ? (
+              <div className="text-gray-500 text-center py-8">
+                No encounters found for this patient
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {enhancedEncounters.map((encounter, index) => (
+                  <EncounterRow key={encounter.id || index} encounter={encounter} />
+                ))}
+              </div>
+            )}
 
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
-        </div>
-      </div>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="text-xs text-gray-500">
+                Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 };

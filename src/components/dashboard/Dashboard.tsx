@@ -40,12 +40,11 @@ import { useQualityAnalytics, usePopulationAnalysis } from "../../hooks/useQuali
 import MeasureAnalysis from "./MeasureAnalysis";
 import EnhancedGuidanceBanner from "./EnhancedGuidanceBanner";
 import { MeasureLogicHighlighting } from "./MeasureLogicHighlighting";
-import { useCDSHooks } from "../../hooks/useCDSHooks";
-import { CDSCard } from "./CDSCard";
 import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
 import { EnhancedHospicePane } from "./EnhancedHospicePane";
+import { SmokingStatusPane } from "./SmokingStatusPane";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -62,6 +61,7 @@ const Dashboard = () => {
   const [showSmokingForm, setShowSmokingForm] = useState<boolean>(false);
   const [showDeveloperView, setShowDeveloperView] = useState<boolean>(false);
   const [showSuggestions, setShowSuggestions] = useState(false); // Start closed by default
+  const [showSmokingStatus, setShowSmokingStatus] = useState(false); // Start closed by default
 
   // Use all the hooks with proper destructuring
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
@@ -83,51 +83,7 @@ const Dashboard = () => {
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
   const { ageResult, loading: ageLoading } = usePatientAge(selectedPatientId, patient?.birthDate);
-  const {
-    cards: cdsCards,
-    loading: cdsLoading,
-    error: cdsError,
-    refresh: refreshCDS,
-  } = useCDSHooks(selectedPatientId);
-  // const measureGuidance =
-  //   patient && measureReport ? getCMS138Guidance(measureReport, patient) : null;
-  // const { guidance: enhancedGuidance, loading: guidanceLoading } = useEnhancedGuidance(
-  //   "CMS138FHIRPreventiveTobaccoCessation", // or whatever your measureId is
-  //   selectedPatientId
-  // );
   const [isCreatingEncounter, setIsCreatingEncounter] = useState(false);
-
-  // Add this with your other logic, after the hooks
-  // const psaReminder = useMemo(() => {
-  //   if (!patient || !observations) return "";
-
-  //   // Check if patient needs PSA test
-  //   const age = patient.birthDate ?
-  //     new Date().getFullYear() - new Date(patient.birthDate).getFullYear() : 0;
-
-  //   const isMale = patient.gender === 'male';
-
-  //   // Check for recent PSA test (you'll need to adjust the code based on your PSA observation codes)
-  //   const recentPSA = observations.some(obs => {
-  //     const isPSA = obs.code?.coding?.some(c =>
-  //       c.code === '2857-1' && c.system === 'http://loinc.org' // LOINC code for PSA
-  //     );
-  //     if (!isPSA) return false;
-
-  //     const obsDate = new Date(obs.effectiveDateTime || '');
-  //     const oneYearAgo = new Date();
-  //     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-  //     return obsDate > oneYearAgo;
-  //   });
-
-  //   // PSA screening typically recommended for men over 50
-  //   if (isMale && age >= 50 && !recentPSA) {
-  //     return "Order PSA Test: Patient has not had a PSA test in the past year";
-  //   }
-
-  //   return "";
-  // }, [patient, observations]);
 
   // Get the latest smoking observation
   const latestSmokingObservation = smokingStatus;
@@ -138,28 +94,6 @@ const Dashboard = () => {
     selectedPatientId,
     latestSmokingObservation,
   });
-  // .filter(obs => obs.code?.coding?.some(c =>
-  //   c.code === '72166-2' && c.system === 'http://loinc.org'
-  // ))
-  // .sort((a, b) => {
-  //   const dateA = a.effectiveDateTime || '';
-  //   const dateB = b.effectiveDateTime || '';
-  //   return dateB.localeCompare(dateA);
-  // })[0]
-
-  // Add the debug useEffect here
-  // Update your debug code to also log smokingStatus from the hook
-  // useEffect(() => {
-  //   const smokingObs = observations.filter(obs =>
-  //     obs.code?.coding?.some(c =>
-  //       c.code === '72166-2' && c.system === 'http://loinc.org'
-  //     )
-  //   );
-  //   console.log('All observations count:', observations.length);
-  //   console.log('All smoking observations:', smokingObs);
-  //   console.log('Latest smoking observation:', latestSmokingObservation);
-  //   console.log('Smoking status from hook:', smokingStatus); // Add this
-  // }, [observations, latestSmokingObservation, smokingStatus]);
 
   const formatQuantity = (quantity: any): string => {
     if (!quantity) return "";
@@ -194,19 +128,6 @@ const Dashboard = () => {
     }
   };
 
-  // Check if smoking status prompt should be shown (example logic)
-  // useEffect(() => {
-  //   if (latestSmokingObservation) {
-  //     const lastRecordedDate = new Date(latestSmokingObservation.effectiveDateTime || "");
-  //     const oneYearAgo = new Date();
-  //     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-  //     if (lastRecordedDate < oneYearAgo) {
-  //       setShowSmokingStatusPrompt(true);
-  //     }
-  //   }
-  // }, [latestSmokingObservation]);
-
   // Update your useEffect to add more logging:
   useEffect(() => {
     console.log("Smoking status check:", {
@@ -234,7 +155,6 @@ const Dashboard = () => {
     }
   }, [latestSmokingObservation]);
 
-  // Add the form submit handler
   // Add the form submit handler
   const handleEncounterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,11 +212,6 @@ const Dashboard = () => {
       setIcd10("");
       setCpt("");
 
-      // Add a delay to ensure server has processed the encounter
-      // setTimeout(() => {
-      //   refreshMeasureReport();
-      //   setIsCreatingEncounter(false);
-      // }, 1500); // 1.5 second delay
     } catch (error) {
       console.error("Error creating encounter:", error);
       alert("Failed to create encounter. Please try again.");
@@ -304,13 +219,6 @@ const Dashboard = () => {
     }
   }; // NOW the combined loading state will work
   const isLoading = patientLoading || encLoading;
-
-  // Remove these duplicate/incomplete hook calls:
-  // const { patient: hookPatient, loading: hookLoading } = usePatient(selectedPatientId);
-  // const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
-
-  // Get the first measure report from the array
-  // const measureReport = measureReports[0];
 
   // Add these helper functions
   const getDisplayText = (code: any): string => {
@@ -413,18 +321,6 @@ const Dashboard = () => {
                 <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
                   <div className="flex justify-between items-center mb-2">
                     <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
-                    {/* <button
-                      onClick={refreshMeasureReport}
-                      className="text-sm px-3 py-1 bg-blue-300 hover:bg-blue-400 rounded"
-                      title="Refresh measure report"
-                    >
-                      🔄 Refresh
-                    </button>{" "}
-                    {loading && (
-                      <div className="mb-4 p-4 bg-gray-100 border rounded text-center">
-                        <p>Evaluating measure...</p>
-                      </div>
-                    )} */}
                     <button
                       onClick={() => setShowDeveloperView(!showDeveloperView)}
                       className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
@@ -433,111 +329,6 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  {/* Guidance Banner - Shows immediately what action is needed */}
-                  {/* {measureGuidance && (
-                  <div
-                    className={`mb-3 p-3 rounded-lg ${
-                      measureGuidance.priority === "action"
-                        ? "bg-amber-50 border border-amber-200 text-amber-900"
-                        : "bg-green-50 border border-green-200 text-green-900"
-                    }`}
-                  >
-                    <div className="flex items-start">
-                      <span className="text-lg mr-2">
-                        {measureGuidance.priority === "action" ? "⚠️" : "✅"}
-                      </span>
-                      <div>
-                        <p className="font-medium">{measureGuidance.message}</p>
-                        {measureGuidance.action && (
-                          <p className="text-sm mt-1">
-                            <strong>Action needed:</strong> {measureGuidance.action}
-                            {measureGuidance.action === "Document tobacco use status" && (
-                              <button
-                                onClick={() => setShowSmokingForm(true)}
-                                className="ml-2 text-sm underline hover:no-underline"
-                              >
-                                Update now →
-                              </button>
-                            )}
-                            {measureGuidance.action === "Create a qualifying encounter" && (
-                              <button
-                                onClick={() => setShowEncounterForm(true)}
-                                className="ml-2 text-sm underline hover:no-underline"
-                              >
-                                Create now →
-                              </button>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )} */}
-                  {/* Add the debug section here */}
-                  {/* {selectedPatientId && (
-                  <div className="mb-4 p-4 bg-yellow-50 border rounded">
-                    <h4>🔧 Debug Info</h4>
-                    <p>
-                      <strong>Patient ID:</strong> {selectedPatientId}
-                    </p>
-                    <p>
-                      <strong>Patient Name:</strong> {patient?.name?.[0]?.given?.join(" ")}{" "}
-                      {patient?.name?.[0]?.family}
-                    </p>
-                    <p>
-                      <strong>Patient Age:</strong>{" "}
-                      {patient?.birthDate
-                        ? new Date().getFullYear() - new Date(patient.birthDate).getFullYear()
-                        : "Unknown"}
-                    </p>
-                    <p>
-                      <strong>Guidance Loading:</strong> {guidanceLoading ? "Yes" : "No"}
-                    </p>
-                    <p>
-                      <strong>Has Enhanced Guidance:</strong> {enhancedGuidance ? "Yes" : "No"}
-                    </p>
-                    {enhancedGuidance && (
-                      <>
-                        <p>
-                          <strong>Enhanced Patient Name:</strong> {enhancedGuidance.patientName}
-                        </p>
-                        <p>
-                          <strong>Enhanced Patient Age:</strong> {enhancedGuidance.patientAge}
-                        </p>
-                        <p>
-                          <strong>Enhanced Status:</strong> {enhancedGuidance.status}
-                        </p>
-                        <p>
-                          <strong>Is Enhanced:</strong> {enhancedGuidance.isEnhanced ? "Yes" : "No"}
-                        </p>
-                        <p>
-                          <strong>Recommendations Count:</strong>{" "}
-                          {enhancedGuidance.recommendations?.length || 0}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )} */}
-
-                  {/* NEW ENHANCED GUIDANCE BANNER - Replace with this */}
-                  {/* {guidanceLoading ? (
-                  <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
-                    <div className="flex items-center">
-                      <span className="animate-spin mr-2">🔄</span>
-                      <span>Analyzing measure requirements...</span>
-                    </div>
-                  </div>
-                ) : enhancedGuidance ? (
-                  <EnhancedGuidanceBanner
-                    guidance={enhancedGuidance}
-                    onCreateEncounter={() => setShowEncounterForm(true)}
-                    onDocumentScreening={() => setShowSmokingForm(true)}
-                  />
-                ) : null} */}
-
-                  {/* <p className="mb-2">
-                  <strong>Status:</strong> {measureReport.status}
-                </p> */}
                   <p className="mb-2">
                     <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)}{" "}
                     to {measureReport.period?.end?.slice(0, 10)}
@@ -639,83 +430,6 @@ const Dashboard = () => {
                     </>
                   )}
 
-                  {/* Show encounter prompt if no qualifying encounters */}
-                  {/* {patient &&
-                  measureReport?.group?.every((group: any) =>
-                    group.population.every((pop: any) => pop.count === 0)
-                  ) &&
-                  isPatientAgeEligibleForTobaccoScreening(patient, measureReport.period?.start || "") && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-300 text-blue-800 rounded">
-                      <p className="mb-2">
-                        This patient has no qualifying encounters documented in 2025. Would you like to
-                        create a qualifying office visit now to ensure they are counted in this measure?
-                      </p>
-                      <button
-                        className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        onClick={() => setShowEncounterForm(true)}
-                      >
-                        Create Encounter
-                      </button>
-                    </div>
-                  )} */}
-                </div>
-              )}{" "}
-              {/* <--- This closes the `measureReport &&` conditional */}
-              {/* CDS Hooks Recommendations */}
-              {cdsLoading && (
-                <div className="mb-3 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-900">
-                  <div className="flex items-center">
-                    <span className="animate-spin mr-2">🔄</span>
-                    <span>Loading clinical recommendations...</span>
-                  </div>
-                </div>
-              )}
-              {cdsError && (
-                <div className="mb-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-900">
-                  <div className="flex items-start">
-                    <span className="text-lg mr-2">⚠️</span>
-                    <div>
-                      <p className="font-medium">Unable to load recommendations</p>
-                      <p className="text-sm mt-1">{cdsError}</p>
-                      <button
-                        onClick={refreshCDS}
-                        className="text-sm mt-2 px-2 py-1 bg-red-100 hover:bg-red-200 rounded"
-                      >
-                        Try again
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {cdsCards.map((card, index) => (
-                <CDSCard
-                  key={index}
-                  card={card}
-                  onActionClick={(action) => {
-                    console.log("CDS card action clicked:", action);
-
-                    // Handle different types of actions
-                    if (
-                      action.type === "create-encounter" ||
-                      action.card?.detail?.toLowerCase().includes("encounter")
-                    ) {
-                      setShowEncounterForm(true);
-                    }
-
-                    // Add other action handlers as needed
-                  }}
-                />
-              ))}
-              {/* Add refresh button if there are CDS cards */}
-              {cdsCards.length > 0 && (
-                <div className="mt-2 flex justify-end">
-                  <button
-                    onClick={refreshCDS}
-                    className="text-sm px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
-                    title="Refresh clinical recommendations"
-                  >
-                    🔄 Refresh
-                  </button>
                 </div>
               )}
             </div>
@@ -790,167 +504,49 @@ const Dashboard = () => {
       )}
       {patient && (
         <div className="mb-4 p-4 bg-white shadow rounded">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-xl font-semibold">👤 Patient</h2>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <span className="text-lg font-bold">
+                {patient.name?.[0]?.given?.join(" ")} {patient.name?.[0]?.family}
+              </span>
+              <span>DOB: {patient.birthDate}</span>
+              <span>Gender: {patient.gender}</span>
+              {ageLoading ? (
+                <span className="animate-pulse">Age: Calculating...</span>
+              ) : ageResult ? (
+                <span>Age: {formatAgeDisplay(ageResult.currentAge!, ageResult.mpStartAge!)}</span>
+              ) : patient.birthDate ? (
+                <span>Age: {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} years</span>
+              ) : null}
+            </div>
             {ageResult?.measurementPeriod && (
               <div className="text-sm text-gray-600">
                 MP {ageResult.measurementPeriod.start.slice(0, 4)}
               </div>
             )}
           </div>
-          <div className="space-y-2">
-            <p className="text-lg font-medium">
-              {patient.name?.[0]?.given?.join(" ")} {patient.name?.[0]?.family}
-            </p>
-            <p>
-              <span className="font-medium">DOB:</span> {patient.birthDate}
-            </p>
-            <p>
-              <span className="font-medium">Gender:</span> {patient.gender}
-            </p>
-            {ageLoading ? (
-              <p>
-                <span className="font-medium">Age:</span> <span className="animate-pulse">Calculating...</span>
-              </p>
-            ) : ageResult ? (
-              <p>
-                <span className="font-medium">Age:</span> {formatAgeDisplay(ageResult.currentAge!, ageResult.mpStartAge!)}
-              </p>
-            ) : patient.birthDate ? (
-              <p>
-                <span className="font-medium">Age:</span> {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} years
-              </p>
-            ) : null}
-          </div>
         </div>
       )}
-      {/*Smoking Status Card - Always visible*/}
-      {/* <div className="mb-4 p-4 bg-white shadow rounded">
-        <h2 className="text-xl font-semibold mb-2">🚭 Smoking Status</h2> */}
-      {/* {smokingStatus ? (
-          <div>
-            <p className="text-lg">
-              {smokingStatus.valueCodeableConcept?.coding?.[0]?.display ||
-                smokingStatus.valueCodeableConcept?.text ||
-                "Unknown status"}
-            </p>
-            <p className="text-sm text-gray-600 mt-1">
-              Last updated: {smokingStatus.effectiveDateTime?.slice(0, 10) || "Date unknown"}
-            </p>
-          </div>
-        ) : (
-          <p className="text-gray-500 italic">No smoking history on file</p>
-        )} */}
-      {/* Optional: Add an update button if status is old or missing */}
-      {/* {(!smokingStatus ||
-          (smokingStatus.effectiveDateTime &&
-            new Date(smokingStatus.effectiveDateTime) <
-              new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))) && (
-          <button
-            onClick={() => setShowSmokingForm(true)}
-            className="mt-3 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Update Smoking Status
-          </button>
-        )}
-      </div>
 
-      Debug info - remove after testing */}
-      {/* <div className="mb-2 p-2 bg-gray-100 text-xs">
-        Debug: showSmokingStatusPrompt = {String(showSmokingStatusPrompt)}, hasSmokingObs ={" "}
-        {String(!!latestSmokingObservation)}, effectiveDate ={" "}
-        {latestSmokingObservation?.effectiveDateTime || "none"}
-      </div>
-      {showSmokingStatusPrompt && (
-        <div className="mb-4 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-800 rounded">
-          <p className="font-semibold mb-2">🚭 Smoking Status</p>
-          <p className="italic mb-2">
-            Last recorded smoking status:{" "}
-            {latestSmokingObservation?.effectiveDateTime?.slice(0, 10)} —{" "}
-            {latestSmokingObservation?.valueCodeableConcept?.text ??
-              latestSmokingObservation?.valueCodeableConcept?.coding?.[0]?.display}
-          </p>
-          <p>
-            The last documented smoking status is over a year old. Has anything changed in the
-            patient's tobacco use since then?
-          </p>
-          <div className="mt-2 space-x-2">
-            <button
-              onClick={() => handleNoChangeSmokingStatus(latestSmokingObservation)}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              No Change
-            </button>
-            <button
-              onClick={() => {
-                setShowSmokingStatusPrompt(false);
-                setShowSmokingForm(true);
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Yes — Update
-            </button>
-            <button
-              onClick={() => setShowSmokingStatusPrompt(false)}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-      {showSmokingForm && (
-        <SmokingStatusForm
-          patientId={selectedPatientId}
-          onSubmit={() => setShowSmokingForm(false)}
-          onCancel={() => setShowSmokingForm(false)}
-        />
-      )} */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-        {/* Smoking Status Prompt, shown if needed */}
-        <Card>
-          <h3 className="font-semibold text-lg mb-2">🚭 Smoking Status</h3>
-          {smokingStatus ? (
-            <div>
-              <p className="text-lg">
-                {smokingStatus.valueCodeableConcept?.coding?.[0]?.display ||
-                  smokingStatus.valueCodeableConcept?.text ||
-                  "Unknown status"}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                Last updated: {smokingStatus.effectiveDateTime?.slice(0, 10) || "Date unknown"}
-              </p>
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No smoking history on file</p>
-          )}
+        {/* Smoking Status */}
+        <SmokingStatusPane 
+          patientId={selectedPatientId}
+          onUpdateClick={() => setShowSmokingForm(true)}
+        />
 
-          {/* Optional: Add an update button if status is old or missing */}
-          {(!smokingStatus ||
-            (smokingStatus.effectiveDateTime &&
-              new Date(smokingStatus.effectiveDateTime) <
-                new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))) && (
-            <button
-              onClick={() => setShowSmokingForm(true)}
-              className="mt-3 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Update Smoking Status
-            </button>
-          )}
-        </Card>
-        
         {/* Recent Encounters */}
         <EncounterPane patientId={selectedPatientId} />
-        
+
         {/* Medication Requests */}
         <MedicationRequestPane patientId={selectedPatientId} />
-        
+
         {/* Service Requests */}
         <ServiceRequestPane patientId={selectedPatientId} />
-        
+
         {/* Enhanced Hospice Status */}
         <EnhancedHospicePane patientId={selectedPatientId} />
-        
+
         <Card>
           <CardContent>
             <h2 className="text-xl font-bold mb-2">⚠️ Allergies</h2>
@@ -1075,13 +671,16 @@ const Dashboard = () => {
                               getDisplayText(c.code).replace(/\s*\(procedure\)$/i, "")
                             ),
                           ].join(" with ");
-                          
+
                           // Get the primary code for display
                           const primaryCode = p.code?.coding?.[0]?.code;
                           const codeSystem = p.code?.coding?.[0]?.system;
-                          const codeDisplay = primaryCode ? 
-                            (codeSystem ? `${codeSystem.split('/').pop()}:${primaryCode}` : primaryCode) : '';
-                          
+                          const codeDisplay = primaryCode
+                            ? codeSystem
+                              ? `${codeSystem.split("/").pop()}:${primaryCode}`
+                              : primaryCode
+                            : "";
+
                           return (
                             <li key={p.id}>
                               <div className="flex items-center gap-2">

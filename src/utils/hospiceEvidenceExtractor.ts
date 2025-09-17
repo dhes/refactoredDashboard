@@ -131,12 +131,17 @@ export function processHospiceEvidence(evaluateResponse: any): {
 
 // Category display mapping
 export const HOSPICE_CATEGORIES = {
-  'WithInpatientEncounter': {
+  'Inpatient Encounter': {
     label: 'Inpatient Encounters with Hospice Discharge',
     icon: '🏥',
     description: 'Inpatient encounters ending with discharge to hospice care'
   },
-  'WithHospiceEncounter': {
+  // 'WithHospiceEncounter': {
+  //   label: 'Hospice Encounters',
+  //   icon: '🏠',
+  //   description: 'Direct hospice care encounters'
+  // },
+  'Encounter Hospice': {
     label: 'Hospice Encounters',
     icon: '🏠',
     description: 'Direct hospice care encounters'
@@ -146,22 +151,22 @@ export const HOSPICE_CATEGORIES = {
     icon: '📋',
     description: 'Hospice care assessments and screenings'
   },
-  'WithHospiceOrder': {
+  'Hospice Order': {
     label: 'Hospice Service Orders',
     icon: '🩺',
     description: 'Orders for hospice care services'
   },
-  'WithHospicePerformed': {
+  'Hospice Performed': {
     label: 'Hospice Procedures',
     icon: '🔬',
     description: 'Performed hospice care procedures'
   },
-  'WithHospiceProblemDiagnosis': {
+  'Hospice Problem Diagnosis': {
     label: 'Hospice Problem Diagnoses',
     icon: '🔍',
     description: 'Hospice-related problem list diagnoses'
   },
-  'WithHospiceEncounterDiagnosis': {
+  'Hospice Encounter Diagnosis': {
     label: 'Hospice Encounter Diagnoses',
     icon: '📝',
     description: 'Hospice-related encounter diagnoses'
