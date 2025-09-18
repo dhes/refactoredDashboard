@@ -1,7 +1,6 @@
 // src/services/fhirClient.ts
 import {
   type Patient,
-  type MeasureReport,
   type Observation,
   type Encounter,
   type Bundle,
@@ -144,26 +143,6 @@ class FHIRClient {
     return fetchFHIR<Patient>("Patient", searchParams);
   }
 
-  // MeasureReport operations
-  async getMeasureReports(patientId: string): Promise<MeasureReport[]> {
-    return fetchFHIR<MeasureReport>("MeasureReport", `patient=Patient/${patientId}`);
-  }
-
-  async evaluateMeasure(
-    measureId: string,
-    patientId: string,
-    periodStart: string,
-    periodEnd: string
-  ): Promise<MeasureReport> {
-    const url = `${FHIR_SERVER}/Measure/${measureId}/$evaluate-measure?subject=Patient/${patientId}&periodStart=${periodStart}&periodEnd=${periodEnd}`;
-    const res = await fetch(url, { method: "GET" });
-
-    if (!res.ok) {
-      throw new Error(`Failed to evaluate measure: ${res.statusText}`);
-    }
-
-    return res.json();
-  }
 
   // Encounter operations
   async getEncounters(patientId: string): Promise<Encounter[]> {
@@ -296,18 +275,16 @@ class FHIRClient {
 
   // Utility method to get multiple resource types at once
   async getPatientSummary(patientId: string) {
-    const [patient, encounters, observations, measureReports] = await Promise.all([
+    const [patient, encounters, observations] = await Promise.all([
       this.getPatient(patientId),
       this.getEncounters(patientId),
       this.getObservations(patientId),
-      this.getMeasureReports(patientId),
     ]);
 
     return {
       patient,
       encounters,
       observations,
-      measureReports,
       // Add computed properties
       hasRecentEncounter: encounters.some((e) => {
         const encounterDate = new Date(e.period?.start || "");

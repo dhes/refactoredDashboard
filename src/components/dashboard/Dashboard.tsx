@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "../ui/card";
 import { usePatient } from "../../hooks/usePatient";
-import { useMeasureReport } from "../../hooks/useMeasureReport";
 import { useObservations } from "../../hooks/useObservations";
 import { useEncounters } from "../../hooks/useEncounters";
 import { useAvailablePatients } from "../../hooks/useAvailablePatients";
@@ -28,18 +27,7 @@ import { useLabs } from "../../hooks/useLabs";
 import { useSmokingStatus } from "../../hooks/useSmokingStatus";
 import { usePatientAge } from "../../hooks/usePatientAge";
 import { formatAgeDisplay } from "../../utils/ageCalculation";
-import {
-  getPopulationValue,
-  // isPatientAgeEligibleForTobaccoScreening,
-  // getCMS138Guidance,
-  // formatCMS138GroupForPractitioner,
-} from "../../utils/measureCQLLogic";
-import { useEnhancedGuidance } from "../../hooks/useEnhancedGuidance";
 import { getCodeSystem, getCodeDisplay } from "../../utils/medicalCodes";
-import { useQualityAnalytics, usePopulationAnalysis } from "../../hooks/useQualityAnalytics";
-import MeasureAnalysis from "./MeasureAnalysis";
-import EnhancedGuidanceBanner from "./EnhancedGuidanceBanner";
-import { MeasureLogicHighlighting } from "./MeasureLogicHighlighting";
 import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
@@ -59,20 +47,11 @@ const Dashboard = () => {
   const [cpt, setCpt] = useState<string>("");
   const [showSmokingStatusPrompt, setShowSmokingStatusPrompt] = useState<boolean>(false);
   const [showSmokingForm, setShowSmokingForm] = useState<boolean>(false);
-  const [showDeveloperView, setShowDeveloperView] = useState<boolean>(false);
-  const [showSuggestions, setShowSuggestions] = useState(false); // Start closed by default
   const [showSmokingStatus, setShowSmokingStatus] = useState(false); // Start closed by default
 
   // Use all the hooks with proper destructuring
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
   const { patient, loading: patientLoading, error: patientError } = usePatient(selectedPatientId);
-  // const { measureReports, loading: reportsLoading } = useMeasureReports(selectedPatientId);
-  const {
-    measureReport,
-    loading,
-    error,
-    // refresh: refreshMeasureReport,
-  } = useMeasureReport(selectedPatientId, "CMS138FHIRPreventiveTobaccoCessation"); // const { observations, smokingStatus, loading: obsLoading } = useObservations(selectedPatientId);
   const { encounters, hasRecentEncounter, loading: encLoading } = useEncounters(selectedPatientId);
   const { allergies, loading: allergiesLoading } = useAllergies(selectedPatientId);
   const { conditions, loading: conditionsLoading } = useConditions(selectedPatientId);
@@ -269,7 +248,6 @@ const Dashboard = () => {
     if (!coding || coding.length === 0) return "Unknown";
     return coding[0].display || coding[0].code || "Unknown";
   };
-  console.log("measureReport:", measureReport);
   // Your return statement...
   return (
     <>
@@ -300,144 +278,6 @@ const Dashboard = () => {
           patientId={selectedPatientId}
         />
       )} */}
-      {/* --- START OF NEW SUGGESTIONS CARD --- */}
-      {/* This Card will wrap all your measure reports */}
-      <Card>
-        <CardContent>
-          {/* Header for the collapsible Suggestions section */}
-          <div
-            className="flex justify-between items-center cursor-pointer"
-            onClick={() => setShowSuggestions(!showSuggestions)} // Toggle visibility on click
-          >
-            <h2 className="text-xl font-semibold">✨ Suggestions</h2>
-            <button className="text-xl font-bold">
-              {showSuggestions ? "▲" : "▼"} {/* Up or Down arrow based on state */}
-            </button>
-          </div>
-          {/* Conditionally render the content based on showSuggestions state */}
-          {showSuggestions && (
-            <div className="mt-4">
-              {measureReport && (
-                <div className="mb-4 p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
-                  <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-xl font-semibold">📊 Tobacco Cessation Measure Report</h2>
-                    <button
-                      onClick={() => setShowDeveloperView(!showDeveloperView)}
-                      className="text-sm px-3 py-1 bg-blue-200 hover:bg-blue-300 rounded"
-                    >
-                      {showDeveloperView ? "Practitioner View" : "Developer View"}
-                    </button>
-                  </div>
-
-                  <p className="mb-2">
-                    <strong>Measurement Period:</strong> {measureReport.period?.start?.slice(0, 10)}{" "}
-                    to {measureReport.period?.end?.slice(0, 10)}
-                  </p>
-
-                  {showDeveloperView ? (
-                    // Developer View - Show measure logic highlighting and raw group data
-                    <div className="space-y-4">
-                      {" "}
-                      {/* This div provides vertical spacing between the cards */}
-                      {/* Raw Group Data Card */}
-                      <Card>
-                        <CardContent>
-                          {" "}
-                          {/* Assuming CardContent is used for inner padding/structure */}
-                          <h4 className="font-semibold mb-2">Raw Group Data:</h4>
-                          {measureReport.group?.map((group: any, i: number) => (
-                            <div key={i} className="mb-2">
-                              <h5 className="font-bold">Group {i + 1}</h5>
-                              <ul className="ml-4 list-disc">
-                                {group.population?.map((pop: any, j: number) => (
-                                  <li key={j}>
-                                    {pop.code?.coding?.[0]?.display ?? "Unknown"}: {pop.count}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </CardContent>
-                      </Card>
-                      {/* Measure Logic Highlighting Card */}
-                      <Card>
-                        <CardContent>
-                          {" "}
-                          {/* Assuming CardContent is used for inner padding/structure */}
-                          <MeasureLogicHighlighting
-                            measureId="CMS138FHIRPreventiveTobaccoCessation"
-                            patientId={selectedPatientId}
-                          />
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ) : (
-                    // Practitioner View - User-friendly display (remains unchanged here)
-                    <>
-                      {/* Group 1: Tobacco History */}
-                      {measureReport.group?.[0] && (
-                        <div className="mb-4 p-3 bg-white rounded">
-                          <h3 className="font-bold mb-2">#1 Tobacco History Documentation</h3>
-                          <div className="space-y-1">
-                            <p>
-                              • Should have tobacco history:{" "}
-                              {getPopulationValue(measureReport.group[0], "denominator")
-                                ? "✓ Yes"
-                                : "✗ No"}
-                            </p>
-                            <p>
-                              • Excluded from tobacco history:{" "}
-                              {getPopulationValue(measureReport.group[0], "denominator-exclusion")
-                                ? "✓ Yes"
-                                : "✗ No"}
-                            </p>
-                            <p>
-                              • Has tobacco history in current year:{" "}
-                              {getPopulationValue(measureReport.group[0], "numerator")
-                                ? "✓ Yes"
-                                : "✗ No"}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Group 2: Tobacco Intervention */}
-                      {measureReport.group?.[1] && (
-                        <div className="mb-4 p-3 bg-white rounded">
-                          <h3 className="font-bold mb-2">#2 Tobacco Intervention</h3>
-                          <div className="space-y-1">
-                            <p>
-                              • Should have tobacco intervention:{" "}
-                              {getPopulationValue(measureReport.group[1], "denominator")
-                                ? "✓ Yes"
-                                : "✗ No"}
-                            </p>
-                            <p>
-                              • Excluded from tobacco intervention:{" "}
-                              {getPopulationValue(measureReport.group[1], "denominator-exclusion")
-                                ? "✓ Yes"
-                                : "✗ No"}
-                            </p>
-                            <p>
-                              • Got tobacco intervention:{" "}
-                              {getPopulationValue(measureReport.group[1], "numerator")
-                                ? "✓ Yes"
-                                : "✗ No"}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                </div>
-              )}
-            </div>
-          )}{" "}
-          {/* <--- This closes the `showSuggestions &&` conditional */}
-        </CardContent>
-      </Card>{" "}
-      {/* --- END OF NEW SUGGESTIONS CARD --- */}
       {showEncounterForm && (
         <div className="mb-4 p-4 border rounded bg-white shadow">
           <h3 className="text-lg font-semibold mb-2">📝 New Encounter Form</h3>
