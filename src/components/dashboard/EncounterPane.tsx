@@ -67,7 +67,8 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
     );
   }
 
-  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
+  const formatMeasurementPeriod = () => 
+    measurementPeriod.isRealTime ? 'Real Time' : measurementPeriod.year.toString();
 
   return (
     <Card>
@@ -79,7 +80,7 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
           <h3 className="text-lg font-semibold">Recent Encounters</h3>
           <div className="flex items-center gap-2">
             <div className="text-sm text-gray-600">
-              MP {formatMeasurementPeriod()}: {encountersInMP} encounters
+              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {encountersInMP} encounters
             </div>
             <button className="text-xl font-bold">
               {showEncounters ? "▲" : "▼"}

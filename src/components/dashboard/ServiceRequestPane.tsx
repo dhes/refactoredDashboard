@@ -73,7 +73,8 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
     );
   }
 
-  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
+  const formatMeasurementPeriod = () => 
+    measurementPeriod.isRealTime ? 'Real Time' : measurementPeriod.year.toString();
 
   return (
     <Card>
@@ -85,7 +86,7 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
           <h3 className="text-lg font-semibold">🩺 Service Requests</h3>
           <div className="flex items-center gap-2">
             <div className="text-sm text-gray-600">
-              MP {formatMeasurementPeriod()}: {serviceRequestsInMP} requests
+              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {serviceRequestsInMP} requests
             </div>
             <button className="text-xl font-bold">
               {showServiceRequests ? "▲" : "▼"}

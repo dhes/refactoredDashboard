@@ -1,7 +1,7 @@
 // src/hooks/usePatientAge.ts
 import { useState, useEffect } from 'react';
 import { calculateCurrentAge, calculateAgeAtDate } from '../utils/ageCalculation';
-import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
+import { useMeasurementPeriod, getCurrentYearPeriod } from '../contexts/MeasurementPeriodContext';
 
 export interface PatientAgeResult {
   currentAge: number | null;
@@ -34,7 +34,14 @@ export const usePatientAge = (patientId: string | undefined, birthDate: string |
     // client-side computation is more efficient
     try {
       const currentAge = calculateCurrentAge(birthDate);
-      const mpStartAge = calculateAgeAtDate(birthDate, measurementPeriod.start);
+      
+      // For Real Time mode, use current year period for age calculation
+      // but keep measurementPeriod as-is for CQL Real Time Mode detection
+      const ageCalcPeriod = measurementPeriod.isRealTime 
+        ? getCurrentYearPeriod()
+        : { start: measurementPeriod.start, end: measurementPeriod.end };
+        
+      const mpStartAge = calculateAgeAtDate(birthDate, ageCalcPeriod.start);
       
       setAgeResult({
         currentAge,

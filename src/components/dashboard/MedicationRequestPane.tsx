@@ -73,7 +73,8 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
     );
   }
 
-  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
+  const formatMeasurementPeriod = () => 
+    measurementPeriod.isRealTime ? 'Real Time' : measurementPeriod.year.toString();
 
   return (
     <Card>
@@ -85,7 +86,7 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
           <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
           <div className="flex items-center gap-2">
             <div className="text-sm text-gray-600">
-              MP {formatMeasurementPeriod()}: {medicationRequestsInMP} requests
+              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {medicationRequestsInMP} requests
             </div>
             <button className="text-xl font-bold">
               {showMedicationRequests ? "▲" : "▼"}

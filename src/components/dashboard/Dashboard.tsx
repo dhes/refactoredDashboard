@@ -33,6 +33,7 @@ import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
 import { EnhancedHospicePane } from "./EnhancedHospicePane";
 import { SmokingStatusPane } from "./SmokingStatusPane";
+import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -62,6 +63,7 @@ const Dashboard = () => {
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
   const { ageResult, loading: ageLoading } = usePatientAge(selectedPatientId, patient?.birthDate);
+  const { measurementPeriod } = useMeasurementPeriod();
   const [isCreatingEncounter, setIsCreatingEncounter] = useState(false);
 
   // Get the latest smoking observation
@@ -359,11 +361,9 @@ const Dashboard = () => {
                 <span>Age: {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} years</span>
               ) : null}
             </div>
-            {ageResult?.measurementPeriod && (
-              <div className="text-sm text-gray-600">
-                MP {ageResult.measurementPeriod.start.slice(0, 4)}
-              </div>
-            )}
+            <div className="text-sm text-gray-600">
+              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${measurementPeriod.year}`}
+            </div>
           </div>
         </div>
       )}

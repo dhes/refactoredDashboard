@@ -109,7 +109,8 @@ export const EnhancedHospicePane: React.FC<EnhancedHospicePaneProps> = ({ patien
     );
   }
 
-  const formatMeasurementPeriod = () => measurementPeriod.year.toString();
+  const formatMeasurementPeriod = () => 
+    measurementPeriod.isRealTime ? 'Real Time' : measurementPeriod.year.toString();
 
   return (
     <Card>
@@ -121,7 +122,7 @@ export const EnhancedHospicePane: React.FC<EnhancedHospicePaneProps> = ({ patien
           <h3 className="text-lg font-semibold">🏠 Hospice Status</h3>
           <div className="flex items-center gap-2">
             <div className="text-sm text-gray-600">
-              MP {formatMeasurementPeriod()}: {hospiceResult.totalEvidenceCount} evidence
+              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {hospiceResult.totalEvidenceCount} evidence
             </div>
             {hospiceResult.hasHospiceServices && (
               <div className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800 font-medium">
