@@ -33,6 +33,8 @@ import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
 import { EnhancedHospicePane } from "./EnhancedHospicePane";
 import { SmokingStatusPane } from "./SmokingStatusPane";
+import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
+import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 const Dashboard = () => {
@@ -386,6 +388,12 @@ const Dashboard = () => {
 
         {/* Enhanced Hospice Status */}
         <EnhancedHospicePane patientId={selectedPatientId} />
+
+        {/* CMS138 Practitioner Alert - only shows when intervention needed */}
+        <CMS138PractitionerCard patientId={selectedPatientId} />
+
+        {/* CMS138 Developer View - shows complete measure evaluation */}
+        <CMS138DeveloperCard patientId={selectedPatientId} />
 
         <Card>
           <CardContent>
