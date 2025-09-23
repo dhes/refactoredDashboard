@@ -28,6 +28,7 @@ import { useSmokingStatus } from "../../hooks/useSmokingStatus";
 import { usePatientAge } from "../../hooks/usePatientAge";
 import { formatAgeDisplay } from "../../utils/ageCalculation";
 import { getCodeSystem, getCodeDisplay } from "../../utils/medicalCodes";
+import { getDisplayText, getCodingDisplay, formatQuantity } from "../../utils/fhirFormatters";
 import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
@@ -82,12 +83,6 @@ const Dashboard = () => {
     latestSmokingObservation,
   });
 
-  const formatQuantity = (quantity: any): string => {
-    if (!quantity) return "";
-    const value = quantity.value || "";
-    const unit = quantity.unit || quantity.code || "";
-    return `${value} ${unit}`.trim();
-  };
 
   // Add the handler for "No Change" button
   const handleNoChangeSmokingStatus = async (previousObservation: any) => {
@@ -206,11 +201,6 @@ const Dashboard = () => {
   }; // NOW the combined loading state will work
   const isLoading = patientLoading || encLoading;
 
-  // Add these helper functions
-  const getDisplayText = (code: any): string => {
-    if (!code) return "Unknown";
-    return code.text || code.coding?.[0]?.display || code.coding?.[0]?.code || "Unknown";
-  };
 
   // Add this helper function in Dashboard.tsx with your other helpers
   const groupProceduresByDate = (procedures: Procedure[]): Record<string, Procedure[]> => {
@@ -251,10 +241,6 @@ const Dashboard = () => {
     return grouped;
   };
 
-  const getCodingDisplay = (coding?: any[]): string => {
-    if (!coding || coding.length === 0) return "Unknown";
-    return coding[0].display || coding[0].code || "Unknown";
-  };
   // Your return statement...
   return (
     <>
