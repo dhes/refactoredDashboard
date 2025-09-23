@@ -103,7 +103,7 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
             ) : (
               <div className="space-y-3">
                 {enhancedMedicationRequests.map((request, index) => (
-                  <MedicationRequestRow key={request.id || index} medicationRequest={request} />
+                  <MedicationRequestRow key={request.id || index} medicationRequest={request} measurementPeriod={measurementPeriod} />
                 ))}
               </div>
             )}
@@ -124,9 +124,10 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
 
 interface MedicationRequestRowProps {
   medicationRequest: EnhancedMedicationRequest;
+  measurementPeriod: any;
 }
 
-const MedicationRequestRow: React.FC<MedicationRequestRowProps> = ({ medicationRequest }) => {
+const MedicationRequestRow: React.FC<MedicationRequestRowProps> = ({ medicationRequest, measurementPeriod }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':

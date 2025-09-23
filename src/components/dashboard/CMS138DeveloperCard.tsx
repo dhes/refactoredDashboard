@@ -1,18 +1,55 @@
 // src/components/dashboard/CMS138DeveloperCard.tsx
 import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
-import { useCMS138Evaluation } from '../../hooks/useCMS138Evaluation';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
-import { formatParameterValue, getParameterValueColor } from '../../utils/cms138Parser';
+import { formatParameterValue, getParameterValueColor, type CMS138Result } from '../../utils/cms138Parser';
 
 interface CMS138DeveloperCardProps {
   patientId: string;
+  cms138Result: CMS138Result | null;
+  loading: boolean;
+  error: Error | null;
 }
 
-export const CMS138DeveloperCard: React.FC<CMS138DeveloperCardProps> = ({ patientId }) => {
+export const CMS138DeveloperCard: React.FC<CMS138DeveloperCardProps> = ({ 
+  patientId, 
+  cms138Result, 
+  loading, 
+  error 
+}) => {
   const [showDeveloper, setShowDeveloper] = useState(false);
-  const { cms138Result, getMeasureStepSummary, loading, error } = useCMS138Evaluation(patientId);
   const { measurementPeriod } = useMeasurementPeriod();
+
+  // Generate measure step summary from cms138Result
+  const getMeasureStepSummary = () => {
+    if (!cms138Result) return '';
+    
+    const steps = [];
+    if (cms138Result.initialPopulation !== null) {
+      steps.push(`Initial Population: ${cms138Result.initialPopulation ? 'Yes' : 'No'}`);
+    }
+    
+    const denominatorKeys = Object.keys(cms138Result.denominators);
+    if (denominatorKeys.length > 0) {
+      const trueCount = Object.values(cms138Result.denominators).filter(v => v === true).length;
+      steps.push(`Denominators: ${trueCount}/${denominatorKeys.length}`);
+    }
+    
+    const numeratorKeys = Object.keys(cms138Result.numerators);
+    if (numeratorKeys.length > 0) {
+      const trueCount = Object.values(cms138Result.numerators).filter(v => v === true).length;
+      steps.push(`Numerators: ${trueCount}/${numeratorKeys.length}`);
+    }
+    
+    const scoreKeys = Object.keys(cms138Result.patientScores);
+    if (scoreKeys.length > 0) {
+      const scores = Object.values(cms138Result.patientScores).filter(v => v !== null);
+      const avgScore = scores.length > 0 ? (scores.reduce((a, b) => (a || 0) + (b || 0), 0) / scores.length).toFixed(1) : 'N/A';
+      steps.push(`Patient Scores: ${avgScore} avg`);
+    }
+    
+    return steps.join(' | ');
+  };
 
   if (loading) {
     return (

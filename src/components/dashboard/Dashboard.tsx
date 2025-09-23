@@ -37,6 +37,7 @@ import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
 import { QualifyingEncountersCard } from "./QualifyingEncountersCard";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
+import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -67,6 +68,7 @@ const Dashboard = () => {
   const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
   const { ageResult, loading: ageLoading } = usePatientAge(selectedPatientId, patient?.birthDate);
   const { measurementPeriod } = useMeasurementPeriod();
+  const { cms138Result, loading: cms138Loading, error: cms138Error } = useCMS138Evaluation(selectedPatientId);
   const [isCreatingEncounter, setIsCreatingEncounter] = useState(false);
 
   // Get the latest smoking observation
@@ -392,13 +394,28 @@ const Dashboard = () => {
         <EnhancedHospicePane patientId={selectedPatientId} />
 
         {/* CMS138 Practitioner Alert - only shows when intervention needed */}
-        <CMS138PractitionerCard patientId={selectedPatientId} />
+        <CMS138PractitionerCard 
+          patientId={selectedPatientId} 
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
 
         {/* CMS138 Developer View - shows complete measure evaluation */}
-        <CMS138DeveloperCard patientId={selectedPatientId} />
+        <CMS138DeveloperCard 
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
 
         {/* Qualifying Encounters - shows CQL-filtered encounters */}
-        <QualifyingEncountersCard patientId={selectedPatientId} />
+        <QualifyingEncountersCard 
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
         
         {allergies.length > 0 && (
           <Card>

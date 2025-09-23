@@ -1,16 +1,26 @@
 // src/components/dashboard/CMS138PractitionerCard.tsx
 import React from 'react';
 import { Card, CardContent } from '../ui/card';
-import { useCMS138Evaluation } from '../../hooks/useCMS138Evaluation';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
+import type { CMS138Result } from '../../utils/cms138Parser';
 
 interface CMS138PractitionerCardProps {
   patientId: string;
+  cms138Result: CMS138Result | null;
+  loading: boolean;
+  error: Error | null;
 }
 
-export const CMS138PractitionerCard: React.FC<CMS138PractitionerCardProps> = ({ patientId }) => {
-  const { cms138Result, hasPractitionerAlert, getPatientScoreSummary, loading, error } = useCMS138Evaluation(patientId);
+export const CMS138PractitionerCard: React.FC<CMS138PractitionerCardProps> = ({ 
+  patientId, 
+  cms138Result, 
+  loading, 
+  error 
+}) => {
   const { measurementPeriod } = useMeasurementPeriod();
+
+  // Calculate practitioner alert status
+  const hasPractitionerAlert = cms138Result?.practitionerAlert || false;
 
   // Show card if:
   // - Real Time mode: only when action needed (Patient Score = 0)

@@ -1,16 +1,23 @@
 // src/components/dashboard/QualifyingEncountersCard.tsx
 import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
-import { useCMS138Evaluation } from '../../hooks/useCMS138Evaluation';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
+import type { CMS138Result } from '../../utils/cms138Parser';
 
 interface QualifyingEncountersCardProps {
   patientId: string;
+  cms138Result: CMS138Result | null;
+  loading: boolean;
+  error: Error | null;
 }
 
-export const QualifyingEncountersCard: React.FC<QualifyingEncountersCardProps> = ({ patientId }) => {
+export const QualifyingEncountersCard: React.FC<QualifyingEncountersCardProps> = ({ 
+  patientId, 
+  cms138Result, 
+  loading, 
+  error 
+}) => {
   const [showEncounters, setShowEncounters] = useState(false);
-  const { cms138Result, loading, error } = useCMS138Evaluation(patientId);
   const { measurementPeriod } = useMeasurementPeriod();
 
   // Combine qualifying and preventive encounters
