@@ -26,8 +26,22 @@ export const TobaccoCessationMedicationsCard: React.FC<TobaccoCessationMedicatio
     ...(cms138Result?.tobaccoCessationActive || []).map(med => ({ ...med, type: 'Active' }))
   ];
 
+  // Deduplicate by medication ID and combine types
+  const deduplicatedMedications = allMedications.reduce((acc: any[], med) => {
+    const existing = acc.find(existing => existing.id === med.id);
+    if (existing) {
+      // Combine types and avoid duplicates
+      const existingTypes = Array.isArray(existing.types) ? existing.types : [existing.type];
+      const newTypes = [...new Set([...existingTypes, med.type])];
+      existing.types = newTypes;
+    } else {
+      acc.push({ ...med, types: [med.type] });
+    }
+    return acc;
+  }, []);
+
   // Sort by authored date (most recent first)
-  const sortedMedications = allMedications.sort((a, b) => {
+  const sortedMedications = deduplicatedMedications.sort((a, b) => {
     const dateA = a.authoredOn || '';
     const dateB = b.authoredOn || '';
     return dateB.localeCompare(dateA);
@@ -151,9 +165,13 @@ const TobaccoCessationMedicationRow: React.FC<TobaccoCessationMedicationRowProps
   const primaryCode = primaryCoding?.code || 'No code';
   const primaryDisplay = primaryCoding?.display || medication.medicationCodeableConcept?.text || 'Unknown medication';
 
-  // Determine if this is ordered or active
-  const medicationType = medication.type || 'Ordered';
-  const categoryColor = medicationType === 'Active' ? 'border-l-green-500 bg-green-50' : 'border-l-blue-500 bg-blue-50';
+  // Handle multiple types (Ordered, Active, or both)
+  const medicationTypes = medication.types || [medication.type || 'Ordered'];
+  const hasActive = medicationTypes.includes('Active');
+  const hasOrdered = medicationTypes.includes('Ordered');
+  
+  // Prioritize Active for color (green if active, blue if only ordered)
+  const categoryColor = hasActive ? 'border-l-green-500 bg-green-50' : 'border-l-blue-500 bg-blue-50';
 
   // Get status information
   const status = medication.status || 'unknown';
@@ -181,13 +199,15 @@ const TobaccoCessationMedicationRow: React.FC<TobaccoCessationMedicationRowProps
             <span className="font-medium">{displayDate}</span>
             <span className="text-sm font-mono text-gray-600">{primaryCode}</span>
             <span className={`text-xs px-2 py-1 rounded-full ${
-              medicationType === 'Active' 
+              hasActive && hasOrdered 
+                ? 'bg-purple-100 text-purple-800'
+                : hasActive 
                 ? 'bg-green-100 text-green-800' 
                 : 'bg-blue-100 text-blue-800'
             }`}>
-              {medicationType}
+              {hasActive && hasOrdered ? 'Ordered & Active' : medicationTypes[0]}
             </span>
-            {status !== 'unknown' && (
+            {status !== 'unknown' && !hasActive && (
               <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(status)}`}>
                 {status}
               </span>

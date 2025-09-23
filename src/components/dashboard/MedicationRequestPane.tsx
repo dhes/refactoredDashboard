@@ -84,14 +84,9 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
           onClick={() => setShowMedicationRequests(!showMedicationRequests)}
         >
           <h3 className="text-lg font-semibold">💊 Medication Requests</h3>
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-gray-600">
-              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {medicationRequestsInMP} requests
-            </div>
-            <button className="text-xl font-bold">
-              {showMedicationRequests ? "▲" : "▼"}
-            </button>
-          </div>
+          <button className="text-xl font-bold">
+            {showMedicationRequests ? "▲" : "▼"}
+          </button>
         </div>
 
         {showMedicationRequests && (

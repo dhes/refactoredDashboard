@@ -78,14 +78,9 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
           onClick={() => setShowEncounters(!showEncounters)}
         >
           <h3 className="text-lg font-semibold">Recent Encounters</h3>
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-gray-600">
-              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {encountersInMP} encounters
-            </div>
-            <button className="text-xl font-bold">
-              {showEncounters ? "▲" : "▼"}
-            </button>
-          </div>
+          <button className="text-xl font-bold">
+            {showEncounters ? "▲" : "▼"}
+          </button>
         </div>
 
         {showEncounters && (
