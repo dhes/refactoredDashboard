@@ -16,6 +16,8 @@ export interface CMS138Result {
   specificActions: string[]; // New field for specific patient score actions
   qualifyingEncounters: any[]; // Encounters from "Qualifying Visit During Measurement Period"
   preventiveEncounters: any[]; // Encounters from "Preventive Visit During Measurement Period"
+  tobaccoCessationOrdered: any[]; // Medications from "Tobacco Cessation Pharmacotherapy Ordered"
+  tobaccoCessationActive: any[]; // Medications from "Active Pharmacotherapy for Tobacco Cessation"
   otherParameters: CMS138Parameter[];
   allParameters: CMS138Parameter[];
 }
@@ -79,6 +81,8 @@ export function processCMS138Response(response: any): CMS138Result {
   const specificActions: string[] = [];
   const qualifyingEncounters: any[] = [];
   const preventiveEncounters: any[] = [];
+  const tobaccoCessationOrdered: any[] = [];
+  const tobaccoCessationActive: any[] = [];
   const otherParameters: CMS138Parameter[] = [];
 
   parameters.forEach((param: any) => {
@@ -110,6 +114,24 @@ export function processCMS138Response(response: any): CMS138Result {
           preventiveEncounters.push(...param.resource);
         } else {
           preventiveEncounters.push(param.resource);
+        }
+      }
+    } else if (name === 'Tobacco Cessation Pharmacotherapy Ordered') {
+      // Extract medication request resources
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          tobaccoCessationOrdered.push(...param.resource);
+        } else {
+          tobaccoCessationOrdered.push(param.resource);
+        }
+      }
+    } else if (name === 'Active Pharmacotherapy for Tobacco Cessation') {
+      // Extract medication request resources
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          tobaccoCessationActive.push(...param.resource);
+        } else {
+          tobaccoCessationActive.push(param.resource);
         }
       }
     }
@@ -157,6 +179,8 @@ export function processCMS138Response(response: any): CMS138Result {
     specificActions,
     qualifyingEncounters,
     preventiveEncounters,
+    tobaccoCessationOrdered,
+    tobaccoCessationActive,
     otherParameters,
     allParameters
   };

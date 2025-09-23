@@ -22,8 +22,8 @@ export const QualifyingEncountersCard: React.FC<QualifyingEncountersCardProps> =
 
   // Combine qualifying and preventive encounters
   const allEncounters = [
-    ...(cms138Result?.qualifyingEncounters || []).map(enc => ({ ...enc, type: 'Qualifying' })),
-    ...(cms138Result?.preventiveEncounters || []).map(enc => ({ ...enc, type: 'Preventive' }))
+    ...(cms138Result?.qualifyingEncounters || []).map(enc => ({ ...enc, category: 'Qualifying' })),
+    ...(cms138Result?.preventiveEncounters || []).map(enc => ({ ...enc, category: 'Preventive' }))
   ];
 
   // Sort by date (most recent first)
@@ -146,11 +146,32 @@ const QualifyingEncounterRow: React.FC<QualifyingEncounterRowProps> = ({ encount
   
   // Get primary encounter type
   const primaryCoding = encounter.type?.[0]?.coding?.[0];
-  const primaryCode = primaryCoding?.code || 'No code';
+  const formatCodeDisplay = (coding: any) => {
+    if (!coding?.code) return 'No code';
+    
+    const system = coding.system || '';
+    const code = coding.code;
+    
+    if (system.includes('snomed.info/sct')) {
+      return `SCT ${code}`;
+    } else if (system.includes('ama-assn.org/go/cpt')) {
+      return `CPT ${code}`;
+    } else if (system.includes('cms.gov/Medicare/Coding/HCPCSReleaseCodeSets')) {
+      return `HCPCS ${code}`;
+    } else if (system.includes('icd-10-cm')) {
+      return `ICD-10-CM ${code}`;
+    } else if (system.includes('icd-10-pcs')) {
+      return `ICD-10-PCS ${code}`;
+    } else {
+      return code;
+    }
+  };
+  
+  const primaryCode = formatCodeDisplay(primaryCoding);
   const primaryDisplay = primaryCoding?.display || 'Unknown encounter type';
 
   // Determine if this is qualifying or preventive
-  const encounterCategory = encounter.type || 'Qualifying';
+  const encounterCategory = encounter.category || 'Qualifying';
   const categoryColor = encounterCategory === 'Preventive' ? 'border-l-blue-500 bg-blue-50' : 'border-l-green-500 bg-green-50';
 
   return (

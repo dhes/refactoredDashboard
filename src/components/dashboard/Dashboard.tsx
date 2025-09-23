@@ -36,6 +36,7 @@ import { SmokingStatusPane } from "./SmokingStatusPane";
 import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
 import { QualifyingEncountersCard } from "./QualifyingEncountersCard";
+import { TobaccoCessationMedicationsCard } from "./TobaccoCessationMedicationsCard";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 
@@ -411,6 +412,14 @@ const Dashboard = () => {
 
         {/* Qualifying Encounters - shows CQL-filtered encounters */}
         <QualifyingEncountersCard 
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* Tobacco Cessation Medications - shows CQL-filtered medications */}
+        <TobaccoCessationMedicationsCard 
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
