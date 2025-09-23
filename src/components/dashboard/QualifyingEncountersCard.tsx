@@ -1,17 +1,30 @@
-// src/components/dashboard/EncounterPane.tsx
+// src/components/dashboard/QualifyingEncountersCard.tsx
 import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
-import { useEncounters, type EnhancedEncounter } from '../../hooks/useEncounters';
+import { useCMS138Evaluation } from '../../hooks/useCMS138Evaluation';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
-interface EncounterPaneProps {
+interface QualifyingEncountersCardProps {
   patientId: string;
 }
 
-export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
-  const [showEncounters, setShowEncounters] = useState(false); // Start closed by default
-  const { enhancedEncounters, encountersInMP, measurementPeriod: hookMeasurementPeriod, loading, error } = useEncounters(patientId);
+export const QualifyingEncountersCard: React.FC<QualifyingEncountersCardProps> = ({ patientId }) => {
+  const [showEncounters, setShowEncounters] = useState(false);
+  const { cms138Result, loading, error } = useCMS138Evaluation(patientId);
   const { measurementPeriod } = useMeasurementPeriod();
+
+  // Combine qualifying and preventive encounters
+  const allEncounters = [
+    ...(cms138Result?.qualifyingEncounters || []).map(enc => ({ ...enc, type: 'Qualifying' })),
+    ...(cms138Result?.preventiveEncounters || []).map(enc => ({ ...enc, type: 'Preventive' }))
+  ];
+
+  // Sort by date (most recent first)
+  const sortedEncounters = allEncounters.sort((a, b) => {
+    const dateA = a.period?.start || '';
+    const dateB = b.period?.start || '';
+    return dateB.localeCompare(dateA);
+  });
 
   if (loading) {
     return (
@@ -21,7 +34,7 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
             className="flex justify-between items-center cursor-pointer"
             onClick={() => setShowEncounters(!showEncounters)}
           >
-            <h3 className="text-lg font-semibold">Recent Encounters</h3>
+            <h3 className="text-lg font-semibold">🏥 Qualifying Encounters</h3>
             <button className="text-xl font-bold">
               {showEncounters ? "▲" : "▼"}
             </button>
@@ -30,7 +43,7 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
             <div className="mt-4">
               <div className="animate-pulse">
                 <div className="space-y-3">
-                  {[1, 2, 3, 4].map(i => (
+                  {[1, 2, 3].map(i => (
                     <div key={i} className="h-16 bg-gray-200 rounded"></div>
                   ))}
                 </div>
@@ -50,7 +63,7 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
             className="flex justify-between items-center cursor-pointer"
             onClick={() => setShowEncounters(!showEncounters)}
           >
-            <h3 className="text-lg font-semibold">Recent Encounters</h3>
+            <h3 className="text-lg font-semibold">🏥 Qualifying Encounters</h3>
             <button className="text-xl font-bold">
               {showEncounters ? "▲" : "▼"}
             </button>
@@ -58,7 +71,7 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
           {showEncounters && (
             <div className="mt-4">
               <div className="text-red-600">
-                Error loading encounters: {error.message}
+                Error loading qualifying encounters: {error.message}
               </div>
             </div>
           )}
@@ -77,10 +90,10 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
           className="flex justify-between items-center cursor-pointer"
           onClick={() => setShowEncounters(!showEncounters)}
         >
-          <h3 className="text-lg font-semibold">Recent Encounters</h3>
+          <h3 className="text-lg font-semibold">🏥 Qualifying Encounters</h3>
           <div className="flex items-center gap-2">
             <div className="text-sm text-gray-600">
-              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {encountersInMP} encounters
+              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${formatMeasurementPeriod()}`}: {sortedEncounters.length} encounters
             </div>
             <button className="text-xl font-bold">
               {showEncounters ? "▲" : "▼"}
@@ -90,14 +103,14 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
 
         {showEncounters && (
           <div className="mt-4">
-            {enhancedEncounters.length === 0 ? (
+            {sortedEncounters.length === 0 ? (
               <div className="text-gray-500 text-center py-8">
-                No encounters found for this patient
+                No qualifying encounters found for this period
               </div>
             ) : (
               <div className="space-y-3">
-                {enhancedEncounters.map((encounter, index) => (
-                  <EncounterRow key={encounter.id || index} encounter={encounter} measurementPeriod={measurementPeriod} />
+                {sortedEncounters.map((encounter, index) => (
+                  <QualifyingEncounterRow key={encounter.id || index} encounter={encounter} />
                 ))}
               </div>
             )}
@@ -116,35 +129,40 @@ export const EncounterPane: React.FC<EncounterPaneProps> = ({ patientId }) => {
   );
 };
 
-interface EncounterRowProps {
-  encounter: EnhancedEncounter;
-  measurementPeriod: any; // Add measurementPeriod prop
+interface QualifyingEncounterRowProps {
+  encounter: any;
 }
 
-const EncounterRow: React.FC<EncounterRowProps> = ({ encounter, measurementPeriod }) => {
+const QualifyingEncounterRow: React.FC<QualifyingEncounterRowProps> = ({ encounter }) => {
+  const encounterDate = encounter.period?.start || '';
+  const displayDate = encounterDate ? new Date(encounterDate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : 'Unknown';
+  
+  // Get primary encounter type
+  const primaryCoding = encounter.type?.[0]?.coding?.[0];
+  const primaryCode = primaryCoding?.code || 'No code';
+  const primaryDisplay = primaryCoding?.display || 'Unknown encounter type';
+
+  // Determine if this is qualifying or preventive
+  const encounterCategory = encounter.type || 'Qualifying';
+  const categoryColor = encounterCategory === 'Preventive' ? 'border-l-blue-500 bg-blue-50' : 'border-l-green-500 bg-green-50';
+
   return (
-    <div className={`p-3 rounded-lg border-l-4 ${
-      encounter.inMeasurementPeriod 
-        ? 'border-l-green-500 bg-green-50' 
-        : 'border-l-gray-300 bg-gray-50'
-    }`}>
+    <div className={`p-3 rounded-lg border-l-4 ${categoryColor}`}>
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <span className="font-medium">{encounter.displayDate}</span>
-            <span className="text-sm font-mono text-gray-600">{encounter.primaryCode}</span>
-            {!measurementPeriod.isRealTime && (
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                encounter.inMeasurementPeriod 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {encounter.inMeasurementPeriod ? '✓ In MP' : '✗ Outside MP'}
-              </span>
-            )}
+            <span className="font-medium">{displayDate}</span>
+            <span className="text-sm font-mono text-gray-600">{primaryCode}</span>
+            <span className={`text-xs px-2 py-1 rounded-full ${
+              encounterCategory === 'Preventive' 
+                ? 'bg-blue-100 text-blue-800' 
+                : 'bg-green-100 text-green-800'
+            }`}>
+              {encounterCategory}
+            </span>
           </div>
           <div className="text-sm text-gray-700 mt-1">
-            {encounter.primaryDisplay}
+            {primaryDisplay}
           </div>
         </div>
       </div>
@@ -152,4 +170,4 @@ const EncounterRow: React.FC<EncounterRowProps> = ({ encounter, measurementPerio
   );
 };
 
-export default EncounterPane;
+export default QualifyingEncountersCard;

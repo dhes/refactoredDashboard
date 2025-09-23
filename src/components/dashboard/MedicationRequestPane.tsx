@@ -108,11 +108,13 @@ export const MedicationRequestPane: React.FC<MedicationRequestPaneProps> = ({ pa
               </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="text-xs text-gray-500">
-                Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+            {!measurementPeriod.isRealTime && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-xs text-gray-500">
+                  Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -153,13 +155,15 @@ const MedicationRequestRow: React.FC<MedicationRequestRowProps> = ({ medicationR
             <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(medicationRequest.statusDisplay)}`}>
               {medicationRequest.statusDisplay}
             </span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              medicationRequest.inMeasurementPeriod 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-600'
-            }`}>
-              {medicationRequest.inMeasurementPeriod ? '✓ In MP' : '✗ Outside MP'}
-            </span>
+            {!measurementPeriod.isRealTime && (
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                medicationRequest.inMeasurementPeriod 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {medicationRequest.inMeasurementPeriod ? '✓ In MP' : '✗ Outside MP'}
+              </span>
+            )}
           </div>
           <div className="text-sm text-gray-700 mt-1 font-medium">
             {medicationRequest.medicationDisplay}

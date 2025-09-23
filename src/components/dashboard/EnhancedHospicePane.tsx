@@ -221,14 +221,16 @@ export const EnhancedHospicePane: React.FC<EnhancedHospicePaneProps> = ({ patien
             </div>
 
             {/* Footer */}
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="text-xs text-gray-500">
-                <div>Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}</div>
-                <div className="mt-1">
-                  Evaluated using Library/Hospice/$evaluate (CQL-driven)
+            {!measurementPeriod.isRealTime && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-xs text-gray-500">
+                  <div>Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}</div>
+                  <div className="mt-1">
+                    Evaluated using Library/Hospice/$evaluate (CQL-driven)
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </CardContent>

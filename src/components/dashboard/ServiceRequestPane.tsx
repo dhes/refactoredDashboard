@@ -108,11 +108,13 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
               </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="text-xs text-gray-500">
-                Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+            {!measurementPeriod.isRealTime && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-xs text-gray-500">
+                  Measurement Period: {measurementPeriod.start} to {measurementPeriod.end}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </CardContent>
@@ -172,13 +174,15 @@ const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest })
                 {serviceRequest.priority.charAt(0).toUpperCase() + serviceRequest.priority.slice(1)}
               </span>
             )}
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              serviceRequest.inMeasurementPeriod 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-600'
-            }`}>
-              {serviceRequest.inMeasurementPeriod ? '✓ In MP' : '✗ Outside MP'}
-            </span>
+            {!measurementPeriod.isRealTime && (
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                serviceRequest.inMeasurementPeriod 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {serviceRequest.inMeasurementPeriod ? '✓ In MP' : '✗ Outside MP'}
+              </span>
+            )}
           </div>
           <div className="text-sm text-gray-700 mt-1 font-medium">
             {serviceRequest.serviceDisplay}

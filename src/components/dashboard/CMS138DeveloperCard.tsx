@@ -178,11 +178,17 @@ export const CMS138DeveloperCard: React.FC<CMS138DeveloperCardProps> = ({ patien
             )}
 
             {/* Other Parameters */}
-            {cms138Result.otherParameters.length > 0 && (
+            {cms138Result.otherParameters.filter(param => 
+              !(measurementPeriod.isRealTime && param.name.includes('Age In Years At Start Of Measurement Period'))
+            ).length > 0 && (
               <div>
                 <h4 className="font-semibold text-gray-800 mb-2">Other Parameters</h4>
                 <div className="space-y-2">
-                  {cms138Result.otherParameters.map((param, index) => (
+                  {cms138Result.otherParameters
+                    .filter(param => 
+                      !(measurementPeriod.isRealTime && param.name.includes('Age In Years At Start Of Measurement Period'))
+                    )
+                    .map((param, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-sm">{param.name}</span>
                       <span className={`text-xs px-2 py-1 rounded ${getParameterValueColor(param.value)}`}>
@@ -195,14 +201,16 @@ export const CMS138DeveloperCard: React.FC<CMS138DeveloperCardProps> = ({ patien
             )}
 
             {/* Footer with measurement period details */}
-            <div className="pt-4 border-t border-gray-200">
-              <div className="text-xs text-gray-500">
-                <div className="font-medium">Measurement Period:</div>
-                <div className="font-mono mt-1">
-                  {measurementPeriod.start} to {measurementPeriod.end}
+            {!measurementPeriod.isRealTime && (
+              <div className="pt-4 border-t border-gray-200">
+                <div className="text-xs text-gray-500">
+                  <div className="font-medium">Measurement Period:</div>
+                  <div className="font-mono mt-1">
+                    {measurementPeriod.start} to {measurementPeriod.end}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </CardContent>

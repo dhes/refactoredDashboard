@@ -14,6 +14,8 @@ export interface CMS138Result {
   exclusions: Record<string, boolean | null>;
   ecqmExclusionReason: string | null; // New field for exclusion reason
   specificActions: string[]; // New field for specific patient score actions
+  qualifyingEncounters: any[]; // Encounters from "Qualifying Visit During Measurement Period"
+  preventiveEncounters: any[]; // Encounters from "Preventive Visit During Measurement Period"
   otherParameters: CMS138Parameter[];
   allParameters: CMS138Parameter[];
 }
@@ -75,6 +77,8 @@ export function processCMS138Response(response: any): CMS138Result {
   let initialPopulation: boolean | null = null;
   let ecqmExclusionReason: string | null = null;
   const specificActions: string[] = [];
+  const qualifyingEncounters: any[] = [];
+  const preventiveEncounters: any[] = [];
   const otherParameters: CMS138Parameter[] = [];
 
   parameters.forEach((param: any) => {
@@ -89,7 +93,28 @@ export function processCMS138Response(response: any): CMS138Result {
     
     allParameters.push(cms138Param);
 
-    // Skip resource types for now
+    // Handle encounter resources first (before skipping resource types)
+    if (name === 'Qualifying Visit During Measurement Period') {
+      // Extract encounter resources
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          qualifyingEncounters.push(...param.resource);
+        } else {
+          qualifyingEncounters.push(param.resource);
+        }
+      }
+    } else if (name === 'Preventive Visit During Measurement Period') {
+      // Extract encounter resources  
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          preventiveEncounters.push(...param.resource);
+        } else {
+          preventiveEncounters.push(param.resource);
+        }
+      }
+    }
+
+    // Skip resource types for other processing
     if (value === 'resource') {
       return;
     }
@@ -130,6 +155,8 @@ export function processCMS138Response(response: any): CMS138Result {
     exclusions,
     ecqmExclusionReason,
     specificActions,
+    qualifyingEncounters,
+    preventiveEncounters,
     otherParameters,
     allParameters
   };

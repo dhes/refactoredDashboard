@@ -35,7 +35,8 @@ import { EnhancedHospicePane } from "./EnhancedHospicePane";
 import { SmokingStatusPane } from "./SmokingStatusPane";
 import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
-import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
+import { QualifyingEncountersCard } from "./QualifyingEncountersCard";
+import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -194,7 +195,6 @@ const Dashboard = () => {
       setEncounterDate(new Date().toISOString().split("T")[0]); // Reset to today
       setIcd10("");
       setCpt("");
-
     } catch (error) {
       console.error("Error creating encounter:", error);
       alert("Failed to create encounter. Please try again.");
@@ -360,11 +360,13 @@ const Dashboard = () => {
               ) : ageResult ? (
                 <span>Age: {formatAgeDisplay(ageResult.currentAge!, ageResult.mpStartAge!)}</span>
               ) : patient.birthDate ? (
-                <span>Age: {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} years</span>
+                <span>
+                  Age: {new Date().getFullYear() - new Date(patient.birthDate).getFullYear()} years
+                </span>
               ) : null}
             </div>
             <div className="text-sm text-gray-600">
-              {measurementPeriod.isRealTime ? 'Real Time' : `MP ${measurementPeriod.year}`}
+              {measurementPeriod.isRealTime ? "Real Time" : `MP ${measurementPeriod.year}`}
             </div>
           </div>
         </div>
@@ -372,7 +374,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {/* Smoking Status */}
-        <SmokingStatusPane 
+        <SmokingStatusPane
           patientId={selectedPatientId}
           onUpdateClick={() => setShowSmokingForm(true)}
         />
@@ -395,210 +397,227 @@ const Dashboard = () => {
         {/* CMS138 Developer View - shows complete measure evaluation */}
         <CMS138DeveloperCard patientId={selectedPatientId} />
 
-        <Card>
-          <CardContent>
-            <h2 className="text-xl font-bold mb-2">⚠️ Allergies</h2>
-            <ul>
-              {allergies.map((a: AllergyIntolerance) => (
-                <li key={a.id}>
-                  {getDisplayText(a.code)}
-                  {(() => {
-                    const status = getCodingDisplay(a.clinicalStatus?.coding);
-                    return status !== "Unknown" ? ` — ${status}` : "";
-                  })()}
-                  {/* {a.note?.[0]?.text ? ` — ${a.note[0].text}` : ""} */}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <h2 className="text-xl font-bold mb-2">🩺 Conditions</h2>
-            <ul>
-              {conditions.map((c: Condition) => (
-                <li key={c.id}>
-                  {getDisplayText(c.code)}
-                  {(() => {
-                    const status = getCodingDisplay(c.clinicalStatus?.coding);
-                    return status !== "Unknown" ? ` — ${status}` : "";
-                  })()}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-        <MuiCard>
-          <MuiCardContent>
-            <Typography variant="h6" gutterBottom>
-              💊 Medications
-            </Typography>
-            <List dense>
-              {medications.map((m: MedicationStatement, index) => (
-                <React.Fragment key={m.id || index}>
-                  <ListItem>
-                    <ListItemText
-                      primary={getDisplayText(m.medicationCodeableConcept)}
-                      secondary={
-                        m.dosage?.[0]?.doseAndRate?.[0]?.doseQuantity
-                          ? `${formatQuantity(m.dosage[0].doseAndRate[0].doseQuantity)}`
-                          : null
+        {/* Qualifying Encounters - shows CQL-filtered encounters */}
+        <QualifyingEncountersCard patientId={selectedPatientId} />
+        
+        {allergies.length > 0 && (
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">⚠️ Allergies</h2>
+              <ul>
+                {allergies.map((a: AllergyIntolerance) => (
+                  <li key={a.id}>
+                    {getDisplayText(a.code)}
+                    {(() => {
+                      const status = getCodingDisplay(a.clinicalStatus?.coding);
+                      return status !== "Unknown" ? ` — ${status}` : "";
+                    })()}
+                    {/* {a.note?.[0]?.text ? ` — ${a.note[0].text}` : ""} */}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+        {conditions.length > 0 && (
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">🩺 Conditions</h2>
+              <ul>
+                {conditions.map((c: Condition) => (
+                  <li key={c.id}>
+                    {getDisplayText(c.code)}
+                    {(() => {
+                      const status = getCodingDisplay(c.clinicalStatus?.coding);
+                      return status !== "Unknown" ? ` — ${status}` : "";
+                    })()}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+        {medications.length > 0 && (
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                💊 Medications
+              </Typography>
+              <List dense>
+                {medications.map((m: MedicationStatement, index) => (
+                  <React.Fragment key={m.id || index}>
+                    <ListItem>
+                      <ListItemText
+                        primary={getDisplayText(m.medicationCodeableConcept)}
+                        secondary={
+                          m.dosage?.[0]?.doseAndRate?.[0]?.doseQuantity
+                            ? `${formatQuantity(m.dosage[0].doseAndRate[0].doseQuantity)}`
+                            : null
+                        }
+                      />
+                    </ListItem>
+                    {index < medications.length - 1 && <Divider component="li" />}
+                  </React.Fragment>
+                ))}
+              </List>
+            </CardContent>
+          </Card>
+        )}
+        {labs.length > 0 && (
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">🧪 Labs</h2>
+              <ul>
+                {Object.entries(groupObservationsByDate(labs))
+                  .sort(([a], [b]) => b.localeCompare(a)) // descending date order
+                  .map(([date, observations]) => (
+                    <li key={date}>
+                      <strong>{date}</strong>
+                      <ul>
+                        {observations.map((lab) => (
+                          <li key={lab.id}>
+                            {getDisplayText(lab.code)}: {formatQuantity(lab.valueQuantity)}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+        {procedures.length > 0 && (
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">🧾 Procedures</h2>
+              <ul>
+                {Object.entries(groupProceduresByDate(procedures))
+                  .sort(([a], [b]) => b.localeCompare(a))
+                  .map(([date, procs]) => {
+                    const byId = Object.fromEntries(
+                      procs.filter((p) => p.id).map((p) => [`Procedure/${p.id!}`, p])
+                    );
+                    const childToParent: Record<string, string> = {};
+                    procs.forEach((p) => {
+                      if (p.id && p.partOf) {
+                        p.partOf.forEach((po) => {
+                          if (po.reference) {
+                            childToParent[p.id!] = po.reference;
+                          }
+                        });
                       }
-                    />
-                  </ListItem>
-                  {index < medications.length - 1 && <Divider component="li" />}
-                </React.Fragment>
-              ))}
-            </List>
-          </MuiCardContent>
-        </MuiCard>
-        <Card>
-          <CardContent>
-            <h2 className="text-xl font-bold mb-2">🧪 Labs</h2>
-            <ul>
-              {Object.entries(groupObservationsByDate(labs))
-                .sort(([a], [b]) => b.localeCompare(a)) // descending date order
-                .map(([date, observations]) => (
-                  <li key={date}>
-                    <strong>{date}</strong>
+                    });
+
+                    const parentGroups: Record<string, Procedure[]> = {};
+                    procs.forEach((p) => {
+                      const parentId = childToParent[p.id!];
+                      if (p.id && parentId && byId[parentId]) {
+                        if (!parentGroups[parentId]) parentGroups[parentId] = [];
+                        parentGroups[parentId].push(p);
+                      }
+                    });
+
+                    const shown = new Set<string>();
+                    return (
+                      <li key={date}>
+                        <strong>{date}</strong>
+                        <ul>
+                          {procs.map((p) => {
+                            if (!p.id) return null;
+                            if (childToParent[p.id]) return null; // skip child here
+                            shown.add(p.id);
+                            const children = parentGroups[`Procedure/${p.id}`] || [];
+                            const description = [
+                              getDisplayText(p.code).replace(/\s*\(procedure\)$/i, ""),
+                              ...children.map((c) =>
+                                getDisplayText(c.code).replace(/\s*\(procedure\)$/i, "")
+                              ),
+                            ].join(" with ");
+
+                            // Get the primary code for display
+                            const primaryCode = p.code?.coding?.[0]?.code;
+                            const codeSystem = p.code?.coding?.[0]?.system;
+                            const codeDisplay = primaryCode
+                              ? codeSystem
+                                ? `${codeSystem.split("/").pop()}:${primaryCode}`
+                                : primaryCode
+                              : "";
+
+                            return (
+                              <li key={p.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{description}</span>
+                                  {codeDisplay && (
+                                    <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 font-mono">
+                                      {codeDisplay}
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+        {immunizations.length > 0 && (
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">💉 Immunizations</h2>
+              <ul>
+                {immunizations
+                  .sort((a, b) =>
+                    (b.occurrenceDateTime || "").localeCompare(a.occurrenceDateTime || "")
+                  )
+                  .map((imm) => (
+                    <li key={imm.id}>
+                      {imm.occurrenceDateTime?.slice(0, 10)} —{" "}
+                      {getDisplayText(imm.vaccineCode).slice(0, 60)}...
+                      {imm.site?.coding?.[0]?.display ? ` — ${imm.site.coding[0].display}` : ""}
+                    </li>
+                  ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+        {familyHistories.length > 0 && (
+          <Card>
+            <CardContent>
+              <h2 className="text-xl font-bold mb-2">👪 Family History</h2>
+              <ul>
+                {familyHistories.map((fh) => (
+                  <li key={fh.id}>
+                    {getDisplayText(fh.relationship).replace(
+                      /\s*\((disorder|qualifier value)\)$/i,
+                      ""
+                    )}
+                    :
                     <ul>
-                      {observations.map((lab) => (
-                        <li key={lab.id}>
-                          {getDisplayText(lab.code)}: {formatQuantity(lab.valueQuantity)}
+                      {fh.condition?.map((cond, index) => (
+                        <li key={index}>
+                          {getDisplayText(cond.code).replace(
+                            /\s*\((disorder|qualifier value)\)$/i,
+                            ""
+                          )}
+                          {cond.outcome?.coding?.[0]?.display
+                            ? ` — ${cond.outcome.coding[0].display.replace(
+                                /\s*\((disorder|qualifier value)\)$/i,
+                                ""
+                              )}`
+                            : ""}
                         </li>
                       ))}
                     </ul>
                   </li>
                 ))}
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <h2 className="text-xl font-bold mb-2">🧾 Procedures</h2>
-            <ul>
-              {Object.entries(groupProceduresByDate(procedures))
-                .sort(([a], [b]) => b.localeCompare(a))
-                .map(([date, procs]) => {
-                  const byId = Object.fromEntries(
-                    procs.filter((p) => p.id).map((p) => [`Procedure/${p.id!}`, p])
-                  );
-                  const childToParent: Record<string, string> = {};
-                  procs.forEach((p) => {
-                    if (p.id && p.partOf) {
-                      p.partOf.forEach((po) => {
-                        if (po.reference) {
-                          childToParent[p.id!] = po.reference;
-                        }
-                      });
-                    }
-                  });
-
-                  const parentGroups: Record<string, Procedure[]> = {};
-                  procs.forEach((p) => {
-                    const parentId = childToParent[p.id!];
-                    if (p.id && parentId && byId[parentId]) {
-                      if (!parentGroups[parentId]) parentGroups[parentId] = [];
-                      parentGroups[parentId].push(p);
-                    }
-                  });
-
-                  const shown = new Set<string>();
-                  return (
-                    <li key={date}>
-                      <strong>{date}</strong>
-                      <ul>
-                        {procs.map((p) => {
-                          if (!p.id) return null;
-                          if (childToParent[p.id]) return null; // skip child here
-                          shown.add(p.id);
-                          const children = parentGroups[`Procedure/${p.id}`] || [];
-                          const description = [
-                            getDisplayText(p.code).replace(/\s*\(procedure\)$/i, ""),
-                            ...children.map((c) =>
-                              getDisplayText(c.code).replace(/\s*\(procedure\)$/i, "")
-                            ),
-                          ].join(" with ");
-
-                          // Get the primary code for display
-                          const primaryCode = p.code?.coding?.[0]?.code;
-                          const codeSystem = p.code?.coding?.[0]?.system;
-                          const codeDisplay = primaryCode
-                            ? codeSystem
-                              ? `${codeSystem.split("/").pop()}:${primaryCode}`
-                              : primaryCode
-                            : "";
-
-                          return (
-                            <li key={p.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{description}</span>
-                                {codeDisplay && (
-                                  <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 font-mono">
-                                    {codeDisplay}
-                                  </span>
-                                )}
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </li>
-                  );
-                })}
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <h2 className="text-xl font-bold mb-2">💉 Immunizations</h2>
-            <ul>
-              {immunizations
-                .sort((a, b) =>
-                  (b.occurrenceDateTime || "").localeCompare(a.occurrenceDateTime || "")
-                )
-                .map((imm) => (
-                  <li key={imm.id}>
-                    {imm.occurrenceDateTime?.slice(0, 10)} —{" "}
-                    {getDisplayText(imm.vaccineCode).slice(0, 60)}...
-                    {imm.site?.coding?.[0]?.display ? ` — ${imm.site.coding[0].display}` : ""}
-                  </li>
-                ))}
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <h2 className="text-xl font-bold mb-2">👪 Family History</h2>
-            <ul>
-              {familyHistories.map((fh) => (
-                <li key={fh.id}>
-                  {getDisplayText(fh.relationship).replace(
-                    /\s*\((disorder|qualifier value)\)$/i,
-                    ""
-                  )}
-                  :
-                  <ul>
-                    {fh.condition?.map((cond, index) => (
-                      <li key={index}>
-                        {getDisplayText(cond.code).replace(
-                          /\s*\((disorder|qualifier value)\)$/i,
-                          ""
-                        )}
-                        {cond.outcome?.coding?.[0]?.display
-                          ? ` — ${cond.outcome.coding[0].display.replace(
-                              /\s*\((disorder|qualifier value)\)$/i,
-                              ""
-                            )}`
-                          : ""}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+              </ul>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </>
   );
