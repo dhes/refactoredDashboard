@@ -5,7 +5,6 @@ import { useObservations } from "../../hooks/useObservations";
 import { useEncounters } from "../../hooks/useEncounters";
 import { useAvailablePatients } from "../../hooks/useAvailablePatients";
 import { fhirClient } from "../../services/fhirClient";
-import SmokingStatusForm from "../forms/SmokingStatusForm";
 import { useAllergies } from "../../hooks/useAllergies";
 import type { AllergyIntolerance, Condition, Procedure, Observation } from "../../types/fhir";
 import { useConditions } from "../../hooks/useConditions";
@@ -24,7 +23,6 @@ import { useFamilyHistory } from "../../hooks/useFamilyHistory";
 import { useImmunizations } from "../../hooks/useImmunizations";
 import { useProcedures } from "../../hooks/useProcedures";
 import { useLabs } from "../../hooks/useLabs";
-import { useSmokingStatus } from "../../hooks/useSmokingStatus";
 import { usePatientAge } from "../../hooks/usePatientAge";
 import { formatAgeDisplay } from "../../utils/ageCalculation";
 import { getCodeSystem, getCodeDisplay } from "../../utils/medicalCodes";
@@ -34,7 +32,7 @@ import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
 import { EnhancedHospicePane } from "./EnhancedHospicePane";
-import { SmokingStatusPane } from "./SmokingStatusPane";
+import { SmokingStatusCard } from "./SmokingStatusCard";
 import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
 import { QualifyingEncountersCard } from "./QualifyingEncountersCard";
@@ -45,17 +43,6 @@ import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
   const [selectedPatientId, setSelectedPatientId] = useState<string>("minimal-test");
-  // const [showEncounterForm, setShowEncounterForm] = useState<boolean>(false);
-  // Add all the form-related state
-  const [showEncounterForm, setShowEncounterForm] = useState<boolean>(false);
-  const [encounterDate, setEncounterDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
-  const [icd10, setIcd10] = useState<string>("");
-  const [cpt, setCpt] = useState<string>("");
-  const [showSmokingStatusPrompt, setShowSmokingStatusPrompt] = useState<boolean>(false);
-  const [showSmokingForm, setShowSmokingForm] = useState<boolean>(false);
-  const [showSmokingStatus, setShowSmokingStatus] = useState(false); // Start closed by default
 
   // Use all the hooks with proper destructuring
   const { patients: availablePatients, loading: patientsLoading } = useAvailablePatients();
@@ -68,141 +55,15 @@ const Dashboard = () => {
   const { immunizations, loading: immunizationsLoading } = useImmunizations(selectedPatientId);
   const { procedures, loading: proceduresLoading } = useProcedures(selectedPatientId);
   const { labs, loading: labsLoading } = useLabs(selectedPatientId);
-  const { smokingStatus, allSmokingObs } = useSmokingStatus(selectedPatientId);
   const { ageResult, loading: ageLoading } = usePatientAge(selectedPatientId, patient?.birthDate);
   const { measurementPeriod } = useMeasurementPeriod();
-  const { cms138Result, loading: cms138Loading, error: cms138Error } = useCMS138Evaluation(selectedPatientId);
-  const [isCreatingEncounter, setIsCreatingEncounter] = useState(false);
+  const {
+    cms138Result,
+    loading: cms138Loading,
+    error: cms138Error,
+  } = useCMS138Evaluation(selectedPatientId);
 
-  // Get the latest smoking observation
-  const latestSmokingObservation = smokingStatus;
-  // NOW you can do the console.log
-  console.log("Smoking status data:", {
-    smokingStatus,
-    allSmokingObs,
-    selectedPatientId,
-    latestSmokingObservation,
-  });
-
-
-  // Add the handler for "No Change" button
-  const handleNoChangeSmokingStatus = async (previousObservation: any) => {
-    try {
-      // Create a new observation with today's date but same value
-      const newObservation = {
-        resourceType: "Observation" as const,
-        status: "final" as const,
-        code: previousObservation.code,
-        subject: {
-          reference: `Patient/${selectedPatientId}`,
-        },
-        effectiveDateTime: new Date().toISOString(),
-        valueCodeableConcept: previousObservation.valueCodeableConcept,
-      };
-
-      await fhirClient.createObservation(newObservation);
-
-      // Close the prompt
-      setShowSmokingStatusPrompt(false);
-
-      // TODO: Refresh observations to show the new one
-    } catch (error) {
-      console.error("Error updating smoking status:", error);
-    }
-  };
-
-  // Update your useEffect to add more logging:
-  useEffect(() => {
-    console.log("Smoking status check:", {
-      hasSmokingStatus: !!latestSmokingObservation,
-      effectiveDateTime: latestSmokingObservation?.effectiveDateTime,
-      showPrompt: showSmokingStatusPrompt,
-    });
-
-    if (latestSmokingObservation && latestSmokingObservation.effectiveDateTime) {
-      const lastRecordedDate = new Date(latestSmokingObservation.effectiveDateTime);
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-      console.log("Date comparison:", {
-        lastRecorded: lastRecordedDate.toISOString(),
-        oneYearAgo: oneYearAgo.toISOString(),
-        shouldShowPrompt: lastRecordedDate < oneYearAgo,
-      });
-
-      if (lastRecordedDate < oneYearAgo) {
-        setShowSmokingStatusPrompt(true);
-      }
-    } else {
-      console.log("No smoking observation or no effectiveDateTime");
-    }
-  }, [latestSmokingObservation]);
-
-  // Add the form submit handler
-  const handleEncounterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreatingEncounter(true);
-
-    try {
-      const encounter = {
-        resourceType: "Encounter" as const,
-        meta: {
-          profile: ["http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter"],
-        },
-        status: "finished" as const,
-        class: {
-          system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
-          code: "AMB",
-          display: "ambulatory",
-        },
-        type: [
-          {
-            coding: [
-              {
-                system: getCodeSystem(cpt),
-                code: cpt,
-                display: getCodeDisplay(cpt),
-              },
-            ],
-          },
-        ],
-        subject: {
-          reference: `Patient/${selectedPatientId}`,
-        },
-        period: {
-          start: `${encounterDate}T08:00:00.000Z`,
-          end: `${encounterDate}T08:15:00.000Z`,
-        },
-        reasonCode: [
-          {
-            coding: [
-              {
-                system: "http://hl7.org/fhir/sid/icd-10-cm",
-                code: icd10,
-                display: `ICD-10 ${icd10}`,
-              },
-            ],
-          },
-        ],
-      };
-
-      const result = await fhirClient.createEncounter(encounter);
-      console.log("Encounter created successfully", result);
-
-      // Reset form and close
-      setShowEncounterForm(false);
-      setEncounterDate(new Date().toISOString().split("T")[0]); // Reset to today
-      setIcd10("");
-      setCpt("");
-    } catch (error) {
-      console.error("Error creating encounter:", error);
-      alert("Failed to create encounter. Please try again.");
-      setIsCreatingEncounter(false);
-    }
-  }; // NOW the combined loading state will work
   const isLoading = patientLoading || encLoading;
-
-
 
   // Your return statement...
   return (
@@ -234,70 +95,6 @@ const Dashboard = () => {
           patientId={selectedPatientId}
         />
       )} */}
-      {showEncounterForm && (
-        <div className="mb-4 p-4 border rounded bg-white shadow">
-          <h3 className="text-lg font-semibold mb-2">📝 New Encounter Form</h3>
-          <form onSubmit={handleEncounterSubmit}>
-            <div className="mb-2">
-              <label className="block font-medium">Encounter Date</label>
-              <input
-                type="date"
-                className="border p-1 rounded w-full"
-                value={encounterDate}
-                onChange={(e) => setEncounterDate(e.target.value)}
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block font-medium">ICD-10-CM Code</label>
-              <select
-                className="border p-1 rounded w-full"
-                value={icd10}
-                onChange={(e) => setIcd10(e.target.value)}
-              >
-                <option value="">Select...</option>
-                <option value="Z00.00">
-                  Z00.00 - General adult medical exam without abnormal findings
-                </option>
-                <option value="Z00.01">
-                  Z00.01 - General adult medical exam with abnormal findings
-                </option>
-                <option value="Z00.121">Z00.121 - Well child visit, 12-17 years</option>
-                <option value="Z00.129">Z00.129 - Well child visit, NOS</option>
-              </select>
-            </div>
-            <div className="mb-2">
-              <label className="block font-medium">CPT Code</label>
-              <select
-                className="border p-1 rounded w-full"
-                value={cpt}
-                onChange={(e) => setCpt(e.target.value)}
-              >
-                <option value="">Select...</option>
-                <option value="99384">99384 - Initial preventive visit, 12-17 years</option>
-                <option value="99385">99385 - Initial preventive visit, 18-39 years</option>
-                <option value="99394">99394 - Periodic preventive visit, 12-17 years</option>
-                <option value="99395">99395 - Periodic preventive visit, 18-39 years</option>
-                <option value="G0438">G0438 - Initial Annual Wellness Visit</option>
-                <option value="G0439">G0439 - Subsequent Annual Wellness Visit</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={isCreatingEncounter || !icd10 || !cpt}
-              className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400"
-            >
-              {isCreatingEncounter ? "Creating..." : "Submit"}
-            </button>
-            <button
-              type="button"
-              className="mt-2 ml-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-              onClick={() => setShowEncounterForm(false)}
-            >
-              Cancel
-            </button>
-          </form>
-        </div>
-      )}
       {patient && (
         <div className="mb-4 p-4 bg-white shadow rounded">
           <div className="flex justify-between items-center">
@@ -326,9 +123,41 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {/* Smoking Status */}
-        <SmokingStatusPane
+        <SmokingStatusCard patientId={selectedPatientId} />
+
+        {/* Enhanced Hospice Status */}
+        <EnhancedHospicePane patientId={selectedPatientId} />
+
+        {/* CMS138 Practitioner Alert - only shows when intervention needed */}
+        <CMS138PractitionerCard
           patientId={selectedPatientId}
-          onUpdateClick={() => setShowSmokingForm(true)}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* CMS138 Developer View - shows complete measure evaluation */}
+        <CMS138DeveloperCard
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* Qualifying Encounters - shows CQL-filtered encounters */}
+        <QualifyingEncountersCard
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* Tobacco Cessation Medications - shows CQL-filtered medications */}
+        <TobaccoCessationMedicationsCard
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
         />
 
         {/* Recent Encounters */}
@@ -340,41 +169,6 @@ const Dashboard = () => {
         {/* Service Requests */}
         <ServiceRequestPane patientId={selectedPatientId} />
 
-        {/* Enhanced Hospice Status */}
-        <EnhancedHospicePane patientId={selectedPatientId} />
-
-        {/* CMS138 Practitioner Alert - only shows when intervention needed */}
-        <CMS138PractitionerCard 
-          patientId={selectedPatientId} 
-          cms138Result={cms138Result}
-          loading={cms138Loading}
-          error={cms138Error}
-        />
-
-        {/* CMS138 Developer View - shows complete measure evaluation */}
-        <CMS138DeveloperCard 
-          patientId={selectedPatientId}
-          cms138Result={cms138Result}
-          loading={cms138Loading}
-          error={cms138Error}
-        />
-
-        {/* Qualifying Encounters - shows CQL-filtered encounters */}
-        <QualifyingEncountersCard 
-          patientId={selectedPatientId}
-          cms138Result={cms138Result}
-          loading={cms138Loading}
-          error={cms138Error}
-        />
-
-        {/* Tobacco Cessation Medications - shows CQL-filtered medications */}
-        <TobaccoCessationMedicationsCard 
-          patientId={selectedPatientId}
-          cms138Result={cms138Result}
-          loading={cms138Loading}
-          error={cms138Error}
-        />
-        
         {allergies.length > 0 && (
           <Card>
             <CardContent>
