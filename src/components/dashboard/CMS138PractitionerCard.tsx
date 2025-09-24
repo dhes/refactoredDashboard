@@ -89,13 +89,9 @@ export const CMS138PractitionerCard: React.FC<CMS138PractitionerCardProps> = ({
           {/* Real Time Mode: Clinical guidance */}
           {measurementPeriod.isRealTime && (
             <>
-              <div className="text-red-700">
-                <div className="font-medium">Tobacco Screening Recommended</div>
-                <div className="text-sm mt-1">The USPSTF recommends screening for tobacco use in all adults and adolescents.</div>
-              </div>
-              {/* Show specific actions if available, otherwise generic recommendations */}
+              {/* Show specific CQL actions directly */}
               <div className="bg-red-100 p-3 rounded">
-                <div className="font-medium text-red-800 mb-2">Recommended Actions:</div>
+                <div className="font-medium text-red-800 mb-2">Action Required:</div>
                 {cms138Result?.specificActions && cms138Result.specificActions.length > 0 ? (
                   <ul className="text-sm text-red-700 space-y-1">
                     {cms138Result.specificActions.map((action, index) => (
@@ -106,9 +102,7 @@ export const CMS138PractitionerCard: React.FC<CMS138PractitionerCardProps> = ({
                 ) : (
                   <ul className="text-sm text-red-700 space-y-1">
                     <li>• Assess current tobacco use status</li>
-                    <li>• Provide cessation counseling if patient uses tobacco</li>
                     <li>• Document intervention in patient record</li>
-                    <li>• Consider pharmacotherapy if appropriate</li>
                   </ul>
                 )}
               </div>
