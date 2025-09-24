@@ -29,6 +29,7 @@ import { usePatientAge } from "../../hooks/usePatientAge";
 import { formatAgeDisplay } from "../../utils/ageCalculation";
 import { getCodeSystem, getCodeDisplay } from "../../utils/medicalCodes";
 import { getDisplayText, getCodingDisplay, formatQuantity } from "../../utils/fhirFormatters";
+import { groupProceduresByDate, groupObservationsByDate } from "../../utils/dataGrouping";
 import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
@@ -202,44 +203,6 @@ const Dashboard = () => {
   const isLoading = patientLoading || encLoading;
 
 
-  // Add this helper function in Dashboard.tsx with your other helpers
-  const groupProceduresByDate = (procedures: Procedure[]): Record<string, Procedure[]> => {
-    const grouped: Record<string, Procedure[]> = {};
-
-    procedures.forEach((proc) => {
-      const date =
-        proc.performedDateTime?.slice(0, 10) ||
-        proc.performedPeriod?.start?.slice(0, 10) ||
-        "Unknown Date";
-
-      if (!grouped[date]) {
-        grouped[date] = [];
-      }
-      grouped[date].push(proc);
-    });
-
-    return grouped;
-  };
-
-  // Add this helper function with your other helpers
-
-  const groupObservationsByDate = (observations: Observation[]): Record<string, Observation[]> => {
-    const grouped: Record<string, Observation[]> = {};
-
-    observations.forEach((obs) => {
-      const date =
-        obs.effectiveDateTime?.slice(0, 10) ||
-        obs.effectivePeriod?.start?.slice(0, 10) ||
-        "Unknown Date";
-
-      if (!grouped[date]) {
-        grouped[date] = [];
-      }
-      grouped[date].push(obs);
-    });
-
-    return grouped;
-  };
 
   // Your return statement...
   return (
