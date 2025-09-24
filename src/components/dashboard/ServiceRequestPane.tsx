@@ -103,7 +103,7 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
             ) : (
               <div className="space-y-3">
                 {enhancedServiceRequests.map((request, index) => (
-                  <ServiceRequestRow key={request.id || index} serviceRequest={request} />
+                  <ServiceRequestRow key={request.id || index} serviceRequest={request} measurementPeriod={measurementPeriod} />
                 ))}
               </div>
             )}
@@ -124,9 +124,10 @@ export const ServiceRequestPane: React.FC<ServiceRequestPaneProps> = ({ patientI
 
 interface ServiceRequestRowProps {
   serviceRequest: EnhancedServiceRequest;
+  measurementPeriod: any;
 }
 
-const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest }) => {
+const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest, measurementPeriod }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':

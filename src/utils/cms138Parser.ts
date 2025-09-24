@@ -18,6 +18,9 @@ export interface CMS138Result {
   preventiveEncounters: any[]; // Encounters from "Preventive Visit During Measurement Period"
   tobaccoCessationOrdered: any[]; // Medications from "Tobacco Cessation Pharmacotherapy Ordered"
   tobaccoCessationActive: any[]; // Medications from "Active Pharmacotherapy for Tobacco Cessation"
+  tobaccoNonUserObservation: any | null; // Observation from "Most Recent Tobacco Use Screening Indicates Tobacco Non User"
+  tobaccoUserObservation: any | null; // Observation from "Most Recent Tobacco Use Screening Indicates Tobacco User"
+  tobaccoCessationCounseling: any[]; // Procedures from "Tobacco Cessation Counseling Given"
   otherParameters: CMS138Parameter[];
   allParameters: CMS138Parameter[];
 }
@@ -83,6 +86,9 @@ export function processCMS138Response(response: any): CMS138Result {
   const preventiveEncounters: any[] = [];
   const tobaccoCessationOrdered: any[] = [];
   const tobaccoCessationActive: any[] = [];
+  let tobaccoNonUserObservation: any | null = null;
+  let tobaccoUserObservation: any | null = null;
+  const tobaccoCessationCounseling: any[] = [];
   const otherParameters: CMS138Parameter[] = [];
 
   parameters.forEach((param: any) => {
@@ -134,6 +140,25 @@ export function processCMS138Response(response: any): CMS138Result {
           tobaccoCessationActive.push(param.resource);
         }
       }
+    } else if (name === 'Most Recent Tobacco Use Screening Indicates Tobacco Non User') {
+      // Extract tobacco non-user observation
+      if (value === 'resource' && param.resource) {
+        tobaccoNonUserObservation = param.resource;
+      }
+    } else if (name === 'Most Recent Tobacco Use Screening Indicates Tobacco User') {
+      // Extract tobacco user observation
+      if (value === 'resource' && param.resource) {
+        tobaccoUserObservation = param.resource;
+      }
+    } else if (name === 'Tobacco Cessation Counseling Given') {
+      // Extract tobacco cessation counseling procedures
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          tobaccoCessationCounseling.push(...param.resource);
+        } else {
+          tobaccoCessationCounseling.push(param.resource);
+        }
+      }
     }
 
     // Skip resource types for other processing
@@ -181,6 +206,9 @@ export function processCMS138Response(response: any): CMS138Result {
     preventiveEncounters,
     tobaccoCessationOrdered,
     tobaccoCessationActive,
+    tobaccoNonUserObservation,
+    tobaccoUserObservation,
+    tobaccoCessationCounseling,
     otherParameters,
     allParameters
   };

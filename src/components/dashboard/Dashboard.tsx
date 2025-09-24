@@ -37,6 +37,8 @@ import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
 import { QualifyingEncountersCard } from "./QualifyingEncountersCard";
 import { TobaccoCessationMedicationsCard } from "./TobaccoCessationMedicationsCard";
+import { TobaccoStatusCard } from "./TobaccoStatusCard";
+import { TobaccoCessationCounselingCard } from "./TobaccoCessationCounselingCard";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 
@@ -122,8 +124,24 @@ const Dashboard = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-        {/* Smoking Status */}
-        <SmokingStatusCard patientId={selectedPatientId} />
+        {/* Smoking Status 
+        <SmokingStatusCard patientId={selectedPatientId} />*/}
+
+        {/* Tobacco Status (CQL-driven) */}
+        <TobaccoStatusCard 
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* Tobacco Cessation Counseling - shows CQL-filtered counseling procedures */}
+        <TobaccoCessationCounselingCard 
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
 
         {/* Enhanced Hospice Status */}
         <EnhancedHospicePane patientId={selectedPatientId} />
