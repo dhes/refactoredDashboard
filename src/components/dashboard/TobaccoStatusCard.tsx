@@ -35,7 +35,7 @@ export const TobaccoStatusCard: React.FC<TobaccoStatusCardProps> = ({
             className="flex justify-between items-center cursor-pointer"
             onClick={() => setShowTobaccoStatus(!showTobaccoStatus)}
           >
-            <h3 className="font-semibold text-lg">🚭 Tobacco Status (CQL)</h3>
+            <h3 className="font-semibold text-lg">🚭 Tobacco Status</h3>
             <button className="text-xl font-bold">
               {showTobaccoStatus ? "▲" : "▼"}
             </button>
@@ -60,7 +60,7 @@ export const TobaccoStatusCard: React.FC<TobaccoStatusCardProps> = ({
             className="flex justify-between items-center cursor-pointer"
             onClick={() => setShowTobaccoStatus(!showTobaccoStatus)}
           >
-            <h3 className="font-semibold text-lg">🚭 Tobacco Status (CQL)</h3>
+            <h3 className="font-semibold text-lg">🚭 Tobacco Status</h3>
             <button className="text-xl font-bold">
               {showTobaccoStatus ? "▲" : "▼"}
             </button>
@@ -111,10 +111,29 @@ export const TobaccoStatusCard: React.FC<TobaccoStatusCardProps> = ({
             className="flex justify-between items-center cursor-pointer"
             onClick={() => setShowTobaccoStatus(!showTobaccoStatus)}
           >
-            <h3 className="font-semibold text-lg">🚭 Tobacco Status (CQL)</h3>
-            <button className="text-xl font-bold">
-              {showTobaccoStatus ? "▲" : "▼"}
-            </button>
+            <h3 className="font-semibold text-lg">🚭 Tobacco Status</h3>
+            <div className="flex items-center gap-2">
+              {tobaccoObservation && (
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  {measurementPeriod.isRealTime ? 'Real Time' : `MP ${measurementPeriod.year}`}:
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    isUser 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {isUser ? 'User' : 'Non-User'}
+                  </span>
+                </div>
+              )}
+              {!tobaccoObservation && (
+                <div className="text-sm text-gray-600">
+                  {measurementPeriod.isRealTime ? 'Real Time' : `MP ${measurementPeriod.year}`}: No status found
+                </div>
+              )}
+              <button className="text-xl font-bold">
+                {showTobaccoStatus ? "▲" : "▼"}
+              </button>
+            </div>
           </div>
 
           {showTobaccoStatus && (
@@ -143,7 +162,7 @@ export const TobaccoStatusCard: React.FC<TobaccoStatusCardProps> = ({
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500 italic">No tobacco status found by CQL evaluation</p>
+                <p className="text-gray-500 italic">No tobacco status found</p>
               )}
 
               {needsUpdate && (

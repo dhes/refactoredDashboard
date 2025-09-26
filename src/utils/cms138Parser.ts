@@ -21,6 +21,7 @@ export interface CMS138Result {
   tobaccoNonUserObservation: any | null; // Observation from "Most Recent Tobacco Use Screening Indicates Tobacco Non User"
   tobaccoUserObservation: any | null; // Observation from "Most Recent Tobacco Use Screening Indicates Tobacco User"
   tobaccoCessationCounseling: any[]; // Procedures from "Tobacco Cessation Counseling Given"
+  allGoalsMet: string | false; // String message from "All Goals Met" or false
   otherParameters: CMS138Parameter[];
   allParameters: CMS138Parameter[];
 }
@@ -89,6 +90,7 @@ export function processCMS138Response(response: any): CMS138Result {
   let tobaccoNonUserObservation: any | null = null;
   let tobaccoUserObservation: any | null = null;
   const tobaccoCessationCounseling: any[] = [];
+  let allGoalsMet: string | false = false;
   const otherParameters: CMS138Parameter[] = [];
 
   parameters.forEach((param: any) => {
@@ -159,6 +161,11 @@ export function processCMS138Response(response: any): CMS138Result {
           tobaccoCessationCounseling.push(param.resource);
         }
       }
+    } else if (name === 'All Goals Met') {
+      // Extract all goals met message (string) or false
+      if (typeof value === 'string') {
+        allGoalsMet = value;
+      }
     }
 
     // Skip resource types for other processing
@@ -209,6 +216,7 @@ export function processCMS138Response(response: any): CMS138Result {
     tobaccoNonUserObservation,
     tobaccoUserObservation,
     tobaccoCessationCounseling,
+    allGoalsMet,
     otherParameters,
     allParameters
   };

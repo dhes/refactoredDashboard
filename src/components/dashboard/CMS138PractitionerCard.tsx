@@ -94,15 +94,27 @@ export const CMS138PractitionerCard: React.FC<CMS138PractitionerCardProps> = ({
                 <div className="font-medium text-red-800 mb-2">Action Required:</div>
                 {cms138Result?.specificActions && cms138Result.specificActions.length > 0 ? (
                   <ul className="text-sm text-red-700 space-y-1">
-                    {cms138Result.specificActions.map((action, index) => (
-                      <li key={index}>• {action}</li>
-                    ))}
-                    <li>• Document intervention in patient record</li>
+                    {cms138Result.specificActions.map((action, index) => {
+                      // Determine appropriate documentation message based on the action
+                      const isScreeningAction = action.includes('Assess current tobacco');
+                      const documentationMessage = isScreeningAction 
+                        ? '• Document tobacco status in patient record'
+                        : '• Document intervention in patient record';
+                      
+                      return (
+                        <React.Fragment key={index}>
+                          <li>• {action}</li>
+                          {index === cms138Result.specificActions.length - 1 && (
+                            <li>{documentationMessage}</li>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <ul className="text-sm text-red-700 space-y-1">
                     <li>• Assess current tobacco use status</li>
-                    <li>• Document intervention in patient record</li>
+                    <li>• Document tobacco status in patient record</li>
                   </ul>
                 )}
               </div>

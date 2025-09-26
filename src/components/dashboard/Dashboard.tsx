@@ -39,6 +39,7 @@ import { QualifyingEncountersCard } from "./QualifyingEncountersCard";
 import { TobaccoCessationMedicationsCard } from "./TobaccoCessationMedicationsCard";
 import { TobaccoStatusCard } from "./TobaccoStatusCard";
 import { TobaccoCessationCounselingCard } from "./TobaccoCessationCounselingCard";
+import { AllGoalsMetCard } from "./AllGoalsMetCard";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 
@@ -128,7 +129,7 @@ const Dashboard = () => {
         <SmokingStatusCard patientId={selectedPatientId} />*/}
 
         {/* Tobacco Status (CQL-driven) */}
-        <TobaccoStatusCard 
+        <TobaccoStatusCard
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
@@ -136,7 +137,15 @@ const Dashboard = () => {
         />
 
         {/* Tobacco Cessation Counseling - shows CQL-filtered counseling procedures */}
-        <TobaccoCessationCounselingCard 
+        <TobaccoCessationCounselingCard
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* All Goals Met - shows when tobacco screening is complete */}
+        <AllGoalsMetCard 
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
@@ -154,14 +163,6 @@ const Dashboard = () => {
           error={cms138Error}
         />
 
-        {/* CMS138 Developer View - shows complete measure evaluation */}
-        <CMS138DeveloperCard
-          patientId={selectedPatientId}
-          cms138Result={cms138Result}
-          loading={cms138Loading}
-          error={cms138Error}
-        />
-
         {/* Qualifying Encounters - shows CQL-filtered encounters */}
         <QualifyingEncountersCard
           patientId={selectedPatientId}
@@ -172,6 +173,14 @@ const Dashboard = () => {
 
         {/* Tobacco Cessation Medications - shows CQL-filtered medications */}
         <TobaccoCessationMedicationsCard
+          patientId={selectedPatientId}
+          cms138Result={cms138Result}
+          loading={cms138Loading}
+          error={cms138Error}
+        />
+
+        {/* CMS138 Developer View - shows complete measure evaluation */}
+        <CMS138DeveloperCard
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
