@@ -32,6 +32,7 @@ import { EncounterPane } from "./EncounterPane";
 import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
 import { EnhancedHospicePane } from "./EnhancedHospicePane";
+import { EnhancedPalliativeCarePane } from "./EnhancedPalliativeCarePane";
 import { SmokingStatusCard } from "./SmokingStatusCard";
 import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
@@ -154,6 +155,9 @@ const Dashboard = () => {
 
         {/* Enhanced Hospice Status */}
         <EnhancedHospicePane patientId={selectedPatientId} />
+
+        {/* Enhanced Palliative Care Status */}
+        <EnhancedPalliativeCarePane patientId={selectedPatientId} />
 
         {/* CMS138 Practitioner Alert - only shows when intervention needed */}
         <CMS138PractitionerCard
