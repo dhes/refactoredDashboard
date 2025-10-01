@@ -93,11 +93,46 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
               <span className="text-lg">🤰</span>
               <div>
                 <div className="font-medium text-pink-800">
-                  Excluded from BMI Quality Measure: Active Pregnancy
+                  Excluded from BMI Screening: Active Pregnancy
                 </div>
                 <div className="text-sm text-pink-700">
                   Your BMI quality score is not affected by this patient.
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BMI Success Banner */}
+        {cms69Result?.patientScore === 1 && (
+          <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">✅</span>
+              <div>
+                <div className="font-medium text-green-800">
+                  Success
+                </div>
+                <div className="text-sm text-green-700">
+                  All BMI Screening goals are met
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BMI Screening Needed Banner */}
+        {!mostRecentBMI && !cms69Result?.isPregnant && cms69Result?.initialPopulation && (
+          <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚖️</span>
+              <div>
+                <div className="font-medium text-blue-800">
+                  Action Required:
+                </div>
+                <ul className="text-sm text-blue-700 space-y-1 mt-1">
+                  <li>• Assess BMI</li>
+                  <li>• Document BMI in patient record</li>
+                </ul>
               </div>
             </div>
           </div>
