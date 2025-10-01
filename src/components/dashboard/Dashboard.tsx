@@ -41,6 +41,7 @@ import { TobaccoCessationMedicationsCard } from "./TobaccoCessationMedicationsCa
 import { TobaccoStatusCard } from "./TobaccoStatusCard";
 import { TobaccoCessationCounselingCard } from "./TobaccoCessationCounselingCard";
 import { AllGoalsMetCard } from "./AllGoalsMetCard";
+import { BMIStatusCard } from "./BMIStatusCard";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 
@@ -136,6 +137,9 @@ const Dashboard = () => {
           loading={cms138Loading}
           error={cms138Error}
         />
+
+        {/* BMI Status (CQL-driven) */}
+        <BMIStatusCard patientId={selectedPatientId} />
 
         {/* Tobacco Cessation Counseling - shows CQL-filtered counseling procedures */}
         <TobaccoCessationCounselingCard
