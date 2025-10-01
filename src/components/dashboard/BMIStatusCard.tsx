@@ -120,6 +120,23 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           </div>
         )}
 
+        {/* High BMI Follow Up Action Banner */}
+        {cms69Result?.highBMIFollowUpAction && (
+          <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚖️</span>
+              <div>
+                <div className="font-medium text-orange-800">
+                  High BMI Follow-Up Required
+                </div>
+                <div className="text-sm text-orange-700 mt-1">
+                  {cms69Result.highBMIFollowUpAction}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* BMI Screening Needed Banner */}
         {!mostRecentBMI && !cms69Result?.isPregnant && cms69Result?.initialPopulation && (
           <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
