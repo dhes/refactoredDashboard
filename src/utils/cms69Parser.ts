@@ -35,7 +35,8 @@ export interface CMS69Result {
   // Intervention data
   highBMIFollowUp: any[]; // From "High BMI And Follow Up Provided"
   lowBMIFollowUp: any[]; // From "Low BMI And Follow Up Provided"
-  highBMIFollowUpAction: string | null; // From "High BMI Follow Up Action"
+  highBMIFollowUpBanner: string | null; // From "High BMI Follow Up Banner"
+  lowBMIFollowUpBanner: string | null; // From "Low BMI Follow Up Banner"
   needsScreeningBanner: string | null; // From "Needs Screening Banner"
   
   allGoalsMet: string | false;
@@ -124,7 +125,8 @@ export function processCMS69Response(response: any): CMS69Result {
   const documentedLowBMI: BMIObservation[] = [];
   const highBMIFollowUp: any[] = [];
   const lowBMIFollowUp: any[] = [];
-  let highBMIFollowUpAction: string | null = null;
+  let highBMIFollowUpBanner: string | null = null;
+  let lowBMIFollowUpBanner: string | null = null;
   let needsScreeningBanner: string | null = null;
   let isPregnant: boolean | null = null;
   
@@ -194,9 +196,13 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         allGoalsMet = value;
       }
-    } else if (name === 'High BMI Follow Up Action') {
+    } else if (name === 'High BMI Follow Up Banner') {
       if (typeof value === 'string') {
-        highBMIFollowUpAction = value;
+        highBMIFollowUpBanner = value;
+      }
+    } else if (name === 'Low BMI Follow Up Banner') {
+      if (typeof value === 'string') {
+        lowBMIFollowUpBanner = value;
       }
     } else if (name === 'Needs Screening Banner') {
       if (typeof value === 'string') {
@@ -258,7 +264,8 @@ export function processCMS69Response(response: any): CMS69Result {
     isPregnant,
     highBMIFollowUp,
     lowBMIFollowUp,
-    highBMIFollowUpAction,
+    highBMIFollowUpBanner,
+    lowBMIFollowUpBanner,
     needsScreeningBanner,
     allGoalsMet,
     otherParameters,

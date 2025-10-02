@@ -120,8 +120,8 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           </div>
         )}
 
-        {/* High BMI Follow Up Action Banner */}
-        {cms69Result?.highBMIFollowUpAction && (
+        {/* High BMI Follow Up Banner */}
+        {cms69Result?.highBMIFollowUpBanner && (
           <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="flex items-center gap-2">
               <span className="text-lg">⚖️</span>
@@ -130,7 +130,24 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
                   High BMI Follow-Up Required
                 </div>
                 <div className="text-sm text-orange-700 mt-1">
-                  {cms69Result.highBMIFollowUpAction}
+                  {cms69Result.highBMIFollowUpBanner}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Low BMI Follow Up Banner */}
+        {cms69Result?.lowBMIFollowUpBanner && (
+          <div className="mb-3 p-3 bg-cyan-50 border border-cyan-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚖️</span>
+              <div>
+                <div className="font-medium text-cyan-800">
+                  Low BMI Follow-Up Required
+                </div>
+                <div className="text-sm text-cyan-700 mt-1">
+                  {cms69Result.lowBMIFollowUpBanner}
                 </div>
               </div>
             </div>
