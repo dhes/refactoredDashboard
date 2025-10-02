@@ -138,18 +138,17 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
         )}
 
         {/* BMI Screening Needed Banner */}
-        {!mostRecentBMI && !cms69Result?.isPregnant && cms69Result?.initialPopulation && (
+        {cms69Result?.needsScreeningBanner && (
           <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center gap-2">
               <span className="text-lg">⚖️</span>
               <div>
                 <div className="font-medium text-blue-800">
-                  Action Required:
+                  BMI Screening Required
                 </div>
-                <ul className="text-sm text-blue-700 space-y-1 mt-1">
-                  <li>• Assess BMI</li>
-                  <li>• Document BMI in patient record</li>
-                </ul>
+                <div className="text-sm text-blue-700 mt-1">
+                  {cms69Result.needsScreeningBanner}
+                </div>
               </div>
             </div>
           </div>

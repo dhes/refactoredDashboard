@@ -36,6 +36,7 @@ export interface CMS69Result {
   highBMIFollowUp: any[]; // From "High BMI And Follow Up Provided"
   lowBMIFollowUp: any[]; // From "Low BMI And Follow Up Provided"
   highBMIFollowUpAction: string | null; // From "High BMI Follow Up Action"
+  needsScreeningBanner: string | null; // From "Needs Screening Banner"
   
   allGoalsMet: string | false;
   otherParameters: CMS69Parameter[];
@@ -124,6 +125,7 @@ export function processCMS69Response(response: any): CMS69Result {
   const highBMIFollowUp: any[] = [];
   const lowBMIFollowUp: any[] = [];
   let highBMIFollowUpAction: string | null = null;
+  let needsScreeningBanner: string | null = null;
   let isPregnant: boolean | null = null;
   
   let allGoalsMet: string | false = false;
@@ -196,6 +198,10 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         highBMIFollowUpAction = value;
       }
+    } else if (name === 'Needs Screening Banner') {
+      if (typeof value === 'string') {
+        needsScreeningBanner = value;
+      }
     }
 
     // Skip resource types for other processing
@@ -253,6 +259,7 @@ export function processCMS69Response(response: any): CMS69Result {
     highBMIFollowUp,
     lowBMIFollowUp,
     highBMIFollowUpAction,
+    needsScreeningBanner,
     allGoalsMet,
     otherParameters,
     allParameters
