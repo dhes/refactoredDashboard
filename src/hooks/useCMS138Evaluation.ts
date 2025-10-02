@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { fhirClient } from '../services/fhirClient';
 import { processCMS138Response, type CMS138Result } from '../utils/cms138Parser';
 import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
+import { getLibraryEvaluationPeriod } from '../utils/evaluationPeriods';
 
 export const useCMS138Evaluation = (patientId: string | undefined) => {
   const [cms138Result, setCMS138Result] = useState<CMS138Result | null>(null);
@@ -21,14 +22,13 @@ export const useCMS138Evaluation = (patientId: string | undefined) => {
     setLoading(true);
     setError(null);
     
-    // Send the measurementPeriod dates directly:
-    // - Real Time mode: 1900 dates trigger CQL Real Time Mode detection
-    // - Retrospective mode: actual MP dates (2025, 2026, etc.)
+    const evaluationPeriod = getLibraryEvaluationPeriod(measurementPeriod);
+    
     fhirClient.evaluateLibrary(
       'CMS138FHIRPreventiveTobaccoCessation', // Main library ID
       patientId,
-      measurementPeriod.start,
-      measurementPeriod.end
+      evaluationPeriod.start,
+      evaluationPeriod.end
     )
       .then(response => {
         const processed = processCMS138Response(response);

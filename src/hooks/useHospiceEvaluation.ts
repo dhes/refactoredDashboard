@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { fhirClient } from '../services/fhirClient';
 import { processHospiceEvidence, type HospiceEvidence } from '../utils/hospiceEvidenceExtractor';
-import { useMeasurementPeriod, getCurrentYearPeriod } from '../contexts/MeasurementPeriodContext';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
+import { getLibraryEvaluationPeriod } from '../utils/evaluationPeriods';
 
 export interface HospiceEvaluationResult {
   hasHospiceServices: boolean;
@@ -28,17 +29,13 @@ export const useHospiceEvaluation = (patientId: string | undefined) => {
     setLoading(true);
     setError(null);
     
-    // For Real Time mode, use current year period for API call
-    // but keep year 1900 in measurementPeriod for CQL Real Time Mode detection
-    const apiPeriod = measurementPeriod.isRealTime 
-      ? getCurrentYearPeriod()
-      : { start: measurementPeriod.start, end: measurementPeriod.end };
+    const evaluationPeriod = getLibraryEvaluationPeriod(measurementPeriod);
     
     fhirClient.evaluateLibrary(
       'Hospice', // Library ID
       patientId,
-      apiPeriod.start,
-      apiPeriod.end
+      evaluationPeriod.start,
+      evaluationPeriod.end
     )
       .then(response => {
         const processed = processHospiceEvidence(response);

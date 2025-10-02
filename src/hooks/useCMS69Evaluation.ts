@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { fhirClient } from '../services/fhirClient';
 import { processCMS69Response, type CMS69Result } from '../utils/cms69Parser';
-import { useMeasurementPeriod, getCurrentYearPeriod } from '../contexts/MeasurementPeriodContext';
+import { useMeasurementPeriod } from '../contexts/MeasurementPeriodContext';
+import { getLibraryEvaluationPeriod } from '../utils/evaluationPeriods';
 
 export const useCMS69Evaluation = (patientId: string | undefined) => {
   const [cms69Result, setCms69Result] = useState<CMS69Result | null>(null);
@@ -21,17 +22,13 @@ export const useCMS69Evaluation = (patientId: string | undefined) => {
     setLoading(true);
     setError(null);
     
-    // For Real Time mode, use current year period for API call
-    // but keep year 1900 in measurementPeriod for CQL Real Time Mode detection
-    const apiPeriod = measurementPeriod.isRealTime 
-      ? getCurrentYearPeriod()
-      : { start: measurementPeriod.start, end: measurementPeriod.end };
+    const evaluationPeriod = getLibraryEvaluationPeriod(measurementPeriod);
     
     fhirClient.evaluateLibrary(
       'CMS69FHIRPCSBMIScreenAndFollowUp', // Library ID
       patientId,
-      apiPeriod.start,
-      apiPeriod.end
+      evaluationPeriod.start,
+      evaluationPeriod.end
     )
       .then(response => {
         const processed = processCMS69Response(response);
