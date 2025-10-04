@@ -59,12 +59,20 @@ export const useServiceRequests = (patientId: string | undefined) => {
             ? request.status.charAt(0).toUpperCase() + request.status.slice(1)
             : 'Unknown';
 
+          // For Real Time mode, use current year period for filtering
+          const filterPeriod = measurementPeriod.isRealTime 
+            ? {
+                start: `${new Date().getFullYear()}-01-01T00:00:00Z`,
+                end: `${new Date().getFullYear()}-12-31T23:59:59Z`
+              }
+            : { start: measurementPeriod.start, end: measurementPeriod.end };
+
           return {
             ...request,
             displayDate: requestDate ? new Date(requestDate).toLocaleDateString('en-US', { timeZone: 'UTC' }) : 'Unknown',
             serviceDisplay,
             statusDisplay,
-            inMeasurementPeriod: requestDate >= measurementPeriod.start && requestDate <= measurementPeriod.end
+            inMeasurementPeriod: requestDate >= filterPeriod.start && requestDate <= filterPeriod.end
           } as EnhancedServiceRequest;
         });
 

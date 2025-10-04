@@ -103,6 +103,23 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           </div>
         )}
 
+        {/* Denominator Exception Banner */}
+        {cms69Result?.denominatorExceptionBanner && (
+          <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⛔</span>
+              <div>
+                <div className="font-medium text-purple-800">
+                  BMI Assessment Exception
+                </div>
+                <div className="text-sm text-purple-700 mt-1">
+                  {cms69Result.denominatorExceptionBanner}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* BMI Success Banner */}
         {cms69Result?.patientScore === 1 && (
           <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">

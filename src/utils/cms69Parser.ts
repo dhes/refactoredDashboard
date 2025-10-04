@@ -38,6 +38,7 @@ export interface CMS69Result {
   highBMIFollowUpBanner: string | null; // From "High BMI Follow Up Banner"
   lowBMIFollowUpBanner: string | null; // From "Low BMI Follow Up Banner"
   needsScreeningBanner: string | null; // From "Needs Screening Banner"
+  denominatorExceptionBanner: string | null; // From "Denominator Exception Banner"
   
   allGoalsMet: string | false;
   otherParameters: CMS69Parameter[];
@@ -128,6 +129,7 @@ export function processCMS69Response(response: any): CMS69Result {
   let highBMIFollowUpBanner: string | null = null;
   let lowBMIFollowUpBanner: string | null = null;
   let needsScreeningBanner: string | null = null;
+  let denominatorExceptionBanner: string | null = null;
   let isPregnant: boolean | null = null;
   
   let allGoalsMet: string | false = false;
@@ -208,6 +210,10 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         needsScreeningBanner = value;
       }
+    } else if (name === 'Denominator Exception Banner') {
+      if (typeof value === 'string') {
+        denominatorExceptionBanner = value;
+      }
     }
 
     // Skip resource types for other processing
@@ -267,6 +273,7 @@ export function processCMS69Response(response: any): CMS69Result {
     highBMIFollowUpBanner,
     lowBMIFollowUpBanner,
     needsScreeningBanner,
+    denominatorExceptionBanner,
     allGoalsMet,
     otherParameters,
     allParameters
