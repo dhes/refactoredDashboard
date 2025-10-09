@@ -33,6 +33,7 @@ import { MedicationRequestPane } from "./MedicationRequestPane";
 import { ServiceRequestPane } from "./ServiceRequestPane";
 import { EnhancedHospicePane } from "./EnhancedHospicePane";
 import { EnhancedPalliativeCarePane } from "./EnhancedPalliativeCarePane";
+import { EnhancedConditionsPane } from "./EnhancedConditionsPane";
 import { SmokingStatusCard } from "./SmokingStatusCard";
 import { CMS138PractitionerCard } from "./CMS138PractitionerCard";
 import { CMS138DeveloperCard } from "./CMS138DeveloperCard";
@@ -42,6 +43,7 @@ import { TobaccoStatusCard } from "./TobaccoStatusCard";
 import { TobaccoCessationCounselingCard } from "./TobaccoCessationCounselingCard";
 import { AllGoalsMetCard } from "./AllGoalsMetCard";
 import { BMIStatusCard } from "./BMIStatusCard";
+import { BMIInterventionsPerformedPane } from "./BMIInterventionsPerformedPane";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
 
@@ -141,6 +143,9 @@ const Dashboard = () => {
         {/* BMI Status (CQL-driven) */}
         <BMIStatusCard patientId={selectedPatientId} />
 
+        {/* BMI Interventions Performed - shows CQL-filtered BMI procedures */}
+        <BMIInterventionsPerformedPane patientId={selectedPatientId} />
+
         {/* Tobacco Cessation Counseling - shows CQL-filtered counseling procedures */}
         <TobaccoCessationCounselingCard
           patientId={selectedPatientId}
@@ -223,24 +228,8 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
-        {conditions.length > 0 && (
-          <Card>
-            <CardContent>
-              <h2 className="text-xl font-bold mb-2">🩺 Conditions</h2>
-              <ul>
-                {conditions.map((c: Condition) => (
-                  <li key={c.id}>
-                    {getDisplayText(c.code)}
-                    {(() => {
-                      const status = getCodingDisplay(c.clinicalStatus?.coding);
-                      return status !== "Unknown" ? ` — ${status}` : "";
-                    })()}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
+        {/* Enhanced Conditions */}
+        <EnhancedConditionsPane patientId={selectedPatientId} />
         {medications.length > 0 && (
           <Card>
             <CardContent>

@@ -128,7 +128,26 @@ interface ServiceRequestRowProps {
 }
 
 const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest, measurementPeriod }) => {
-  const getStatusColor = (status: string) => {
+  // Check for qicore-servicenotrequested profile
+  const isServiceNotRequested = serviceRequest.meta?.profile?.includes(
+    'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-servicenotrequested'
+  );
+
+  // Extract doNotPerformReason
+  const doNotPerformReason = serviceRequest.extension?.find(
+    ext => ext.url === 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-doNotPerformReason'
+  )?.valueCodeableConcept?.coding?.[0]?.display;
+
+  // Extract reasonRefused as fallback
+  const reasonRefused = serviceRequest.extension?.find(
+    ext => ext.url === 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-reasonRefused'
+  )?.valueCodeableConcept?.coding?.[0]?.display;
+
+  const getStatusColor = (status: string, isNotRequested: boolean) => {
+    if (isNotRequested) {
+      return 'bg-red-100 text-red-800'; // Red for NOT PERFORMED
+    }
+    
     switch (status.toLowerCase()) {
       case 'active':
         return 'bg-green-100 text-green-800';
@@ -157,19 +176,30 @@ const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest, m
     }
   };
 
+  // Get the contraindication reason
+  const contraindictionReason = doNotPerformReason || reasonRefused;
+
   return (
     <div className={`p-3 rounded-lg border-l-4 ${
-      serviceRequest.inMeasurementPeriod 
-        ? 'border-l-green-500 bg-green-50' 
-        : 'border-l-gray-300 bg-gray-50'
+      isServiceNotRequested
+        ? 'border-l-red-500 bg-red-50'
+        : serviceRequest.inMeasurementPeriod 
+          ? 'border-l-green-500 bg-green-50' 
+          : 'border-l-gray-300 bg-gray-50'
     }`}>
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="font-medium">{serviceRequest.displayDate}</span>
-            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(serviceRequest.statusDisplay)}`}>
-              {serviceRequest.statusDisplay}
-            </span>
+            {isServiceNotRequested ? (
+              <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-800">
+                ⛔ NOT PERFORMED
+              </span>
+            ) : (
+              <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(serviceRequest.statusDisplay, false)}`}>
+                {serviceRequest.statusDisplay}
+              </span>
+            )}
             {serviceRequest.priority && getPriorityColor(serviceRequest.priority) && (
               <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(serviceRequest.priority)}`}>
                 {serviceRequest.priority.charAt(0).toUpperCase() + serviceRequest.priority.slice(1)}
@@ -187,6 +217,9 @@ const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest, m
           </div>
           <div className="text-sm text-gray-700 mt-1 font-medium">
             {serviceRequest.serviceDisplay}
+            {isServiceNotRequested && (
+              <span className="text-red-600 ml-2">(NOT PERFORMED)</span>
+            )}
           </div>
           {/* Show code if it's different from display */}
           {serviceRequest.code?.coding?.[0]?.code && 
@@ -195,6 +228,12 @@ const ServiceRequestRow: React.FC<ServiceRequestRowProps> = ({ serviceRequest, m
               Code: {serviceRequest.code.coding[0].system ? 
                 `${serviceRequest.code.coding[0].system}|${serviceRequest.code.coding[0].code}` :
                 serviceRequest.code.coding[0].code}
+            </div>
+          )}
+          {/* Show contraindication reason for service not requested */}
+          {isServiceNotRequested && contraindictionReason && (
+            <div className="text-xs text-red-600 mt-1 font-medium">
+              Reason: {contraindictionReason}
             </div>
           )}
           {/* Show intent if available */}

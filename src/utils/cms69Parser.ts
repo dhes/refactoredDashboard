@@ -35,6 +35,8 @@ export interface CMS69Result {
   // Intervention data
   highBMIFollowUp: any[]; // From "High BMI And Follow Up Provided"
   lowBMIFollowUp: any[]; // From "Low BMI And Follow Up Provided"
+  highBMIInterventionsPerformed: any[]; // From "High BMI Interventions Performed"
+  lowBMIInterventionsPerformed: any[]; // From "Low BMI Interventions Performed"
   highBMIFollowUpBanner: string | null; // From "High BMI Follow Up Banner"
   lowBMIFollowUpBanner: string | null; // From "Low BMI Follow Up Banner"
   needsScreeningBanner: string | null; // From "Needs Screening Banner"
@@ -126,6 +128,8 @@ export function processCMS69Response(response: any): CMS69Result {
   const documentedLowBMI: BMIObservation[] = [];
   const highBMIFollowUp: any[] = [];
   const lowBMIFollowUp: any[] = [];
+  const highBMIInterventionsPerformed: any[] = [];
+  const lowBMIInterventionsPerformed: any[] = [];
   let highBMIFollowUpBanner: string | null = null;
   let lowBMIFollowUpBanner: string | null = null;
   let needsScreeningBanner: string | null = null;
@@ -192,6 +196,22 @@ export function processCMS69Response(response: any): CMS69Result {
           lowBMIFollowUp.push(...param.resource);
         } else {
           lowBMIFollowUp.push(param.resource);
+        }
+      }
+    } else if (name === 'High BMI Interventions Performed') {
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          highBMIInterventionsPerformed.push(...param.resource);
+        } else {
+          highBMIInterventionsPerformed.push(param.resource);
+        }
+      }
+    } else if (name === 'Low BMI Interventions Performed') {
+      if (value === 'resource' && param.resource) {
+        if (Array.isArray(param.resource)) {
+          lowBMIInterventionsPerformed.push(...param.resource);
+        } else {
+          lowBMIInterventionsPerformed.push(param.resource);
         }
       }
     } else if (name === 'All Goals Met') {
@@ -270,6 +290,8 @@ export function processCMS69Response(response: any): CMS69Result {
     isPregnant,
     highBMIFollowUp,
     lowBMIFollowUp,
+    highBMIInterventionsPerformed,
+    lowBMIInterventionsPerformed,
     highBMIFollowUpBanner,
     lowBMIFollowUpBanner,
     needsScreeningBanner,
