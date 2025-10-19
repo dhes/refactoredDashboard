@@ -46,6 +46,7 @@ import { BMIStatusCard } from "./BMIStatusCard";
 import { BMIInterventionsPerformedPane } from "./BMIInterventionsPerformedPane";
 import { useMeasurementPeriod } from "../../contexts/MeasurementPeriodContext";
 import { useCMS138Evaluation } from "../../hooks/useCMS138Evaluation";
+import { CMS69EvaluationProvider } from "../../contexts/CMS69EvaluationContext";
 
 const Dashboard = () => {
   // State for selected patient - THIS ONE YOU NEED TO KEEP!
@@ -74,7 +75,7 @@ const Dashboard = () => {
 
   // Your return statement...
   return (
-    <>
+    <CMS69EvaluationProvider patientId={selectedPatientId}>
       <div className="mb-4 p-4 bg-gray-50 border rounded">
         <label className="block font-medium mb-1">Select Patient</label>
         <select
@@ -412,7 +413,7 @@ const Dashboard = () => {
           </Card>
         )}
       </div>
-    </>
+    </CMS69EvaluationProvider>
   );
 };
 

@@ -19,10 +19,10 @@ export const useEncounters = (patientId: string | undefined) => {
   const [error, setError] = useState<Error | null>(null);
 
   // Get measurement period from context
-  const { measurementPeriod } = useMeasurementPeriod();
+  const { measurementPeriod, isInitialized } = useMeasurementPeriod();
 
   useEffect(() => {
-    if (!patientId) {
+    if (!patientId || !isInitialized) {
       setEncounters([]);
       setEnhancedEncounters([]);
       return;
@@ -62,7 +62,7 @@ export const useEncounters = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId, measurementPeriod]);
+  }, [patientId, measurementPeriod, isInitialized]);
 
   // Utility: Check if patient has recent encounter
   const hasRecentEncounter = encounters.some(e => {

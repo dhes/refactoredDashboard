@@ -19,10 +19,10 @@ export const useServiceRequests = (patientId: string | undefined) => {
   const [error, setError] = useState<Error | null>(null);
 
   // Get measurement period from context
-  const { measurementPeriod } = useMeasurementPeriod();
+  const { measurementPeriod, isInitialized } = useMeasurementPeriod();
 
   useEffect(() => {
-    if (!patientId) {
+    if (!patientId || !isInitialized) {
       setServiceRequests([]);
       setEnhancedServiceRequests([]);
       return;
@@ -81,7 +81,7 @@ export const useServiceRequests = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId, measurementPeriod]);
+  }, [patientId, measurementPeriod, isInitialized]);
 
   // Count service requests in measurement period
   const serviceRequestsInMP = enhancedServiceRequests.filter(sr => sr.inMeasurementPeriod).length;

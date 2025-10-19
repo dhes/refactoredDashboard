@@ -11,10 +11,10 @@ export const useCMS138Evaluation = (patientId: string | undefined) => {
   const [error, setError] = useState<Error | null>(null);
 
   // Get measurement period from context
-  const { measurementPeriod } = useMeasurementPeriod();
+  const { measurementPeriod, isInitialized } = useMeasurementPeriod();
 
   useEffect(() => {
-    if (!patientId) {
+    if (!patientId || !isInitialized) {
       setCMS138Result(null);
       return;
     }
@@ -36,7 +36,7 @@ export const useCMS138Evaluation = (patientId: string | undefined) => {
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId, measurementPeriod]);
+  }, [patientId, measurementPeriod, isInitialized]);
 
   // Utility functions for easy access
   const hasPractitionerAlert = cms138Result?.practitionerAlert || false;

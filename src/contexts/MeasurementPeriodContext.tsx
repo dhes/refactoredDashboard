@@ -1,5 +1,5 @@
 // src/contexts/MeasurementPeriodContext.tsx
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 export interface MeasurementPeriod {
   year: number;
@@ -15,6 +15,7 @@ interface MeasurementPeriodContextType {
   setRealTimeMode: () => void;
   availableYears: number[];
   isRealTimeAvailable: boolean;
+  isInitialized: boolean;
 }
 
 const MeasurementPeriodContext = createContext<MeasurementPeriodContextType | undefined>(undefined);
@@ -66,6 +67,12 @@ export const MeasurementPeriodProvider: React.FC<MeasurementPeriodProviderProps>
   const [measurementPeriod, setMeasurementPeriod] = useState<MeasurementPeriod>(
     createRealTimePeriod()
   );
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Ensure initialization is complete before allowing hooks to run
+  useEffect(() => {
+    setIsInitialized(true);
+  }, []);
 
   const setMeasurementPeriodYear = (year: number) => {
     setMeasurementPeriod(createMeasurementPeriod(year));
@@ -82,7 +89,8 @@ export const MeasurementPeriodProvider: React.FC<MeasurementPeriodProviderProps>
         setMeasurementPeriodYear,
         setRealTimeMode,
         availableYears,
-        isRealTimeAvailable: true
+        isRealTimeAvailable: true,
+        isInitialized
       }}
     >
       {children}

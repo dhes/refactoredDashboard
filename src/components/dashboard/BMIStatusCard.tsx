@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
-import { useCMS69Evaluation } from '../../hooks/useCMS69Evaluation';
+import { useCMS69EvaluationShared } from '../../hooks/useCMS69EvaluationShared';
 import { getBMICategory, type BMIObservation } from '../../utils/cms69Parser';
 
 interface BMIStatusCardProps {
@@ -12,7 +12,7 @@ interface BMIStatusCardProps {
 export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
   const [showBMIStatus, setShowBMIStatus] = useState(false);
   const { measurementPeriod } = useMeasurementPeriod();
-  const { cms69Result, loading, error } = useCMS69Evaluation(patientId);
+  const { cms69Result, loading, error } = useCMS69EvaluationShared();
 
   // Get the most recent BMI observation
   const mostRecentBMI = cms69Result?.bmiObservations?.[0] || null;
@@ -83,6 +83,27 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
 
   const bmiInterpretation = getBMIInterpretation();
 
+  // Enhanced BMI exception banner logic
+  const getBMIExceptionBanner = () => {
+    if (cms69Result?.denominatorExceptions) {
+      // Use detailed text if available, fallback to generic
+      const bannerText = cms69Result.bmiExceptionBannerText || 
+        'BMI Assessment Exception: Clinical contraindication documented. Quality measure requirements do not apply to this patient.';
+      
+      return {
+        type: 'exception',
+        message: bannerText,
+        category: cms69Result.bmiExceptionCategory,
+        color: cms69Result.bmiExceptionCategory === 'Medical Reason'
+          ? 'bg-orange-100 border-orange-200 text-orange-800'  // Medical contraindication
+          : 'bg-blue-100 border-blue-200 text-blue-800'        // Patient choice
+      };
+    }
+    return null;
+  };
+
+  const exceptionBanner = getBMIExceptionBanner();
+
   return (
     <Card>
       <CardContent>
@@ -103,17 +124,19 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           </div>
         )}
 
-        {/* Denominator Exception Banner */}
-        {cms69Result?.denominatorExceptionBanner && (
-          <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+        {/* Enhanced BMI Exception Banner */}
+        {exceptionBanner && (
+          <div className={`mb-3 p-3 rounded-lg ${exceptionBanner.color}`}>
             <div className="flex items-center gap-2">
-              <span className="text-lg">⛔</span>
+              <span className="text-lg">
+                {exceptionBanner.category === 'Medical Reason' ? '⚠️' : '👤'}
+              </span>
               <div>
-                <div className="font-medium text-purple-800">
-                  BMI Assessment Exception
+                <div className="font-medium">
+                  {exceptionBanner.message}
                 </div>
-                <div className="text-sm text-purple-700 mt-1">
-                  {cms69Result.denominatorExceptionBanner}
+                <div className="text-sm mt-1 opacity-80">
+                  Quality measure requirements do not apply to this patient.
                 </div>
               </div>
             </div>

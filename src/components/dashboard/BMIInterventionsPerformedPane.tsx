@@ -1,7 +1,7 @@
 // src/components/dashboard/BMIInterventionsPerformedPane.tsx
 import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
-import { useCMS69Evaluation } from '../../hooks/useCMS69Evaluation';
+import { useCMS69EvaluationShared } from '../../hooks/useCMS69EvaluationShared';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 
 interface BMIInterventionsPerformedPaneProps {
@@ -10,7 +10,7 @@ interface BMIInterventionsPerformedPaneProps {
 
 export const BMIInterventionsPerformedPane: React.FC<BMIInterventionsPerformedPaneProps> = ({ patientId }) => {
   const [showInterventions, setShowInterventions] = useState(false); // Start closed by default
-  const { cms69Result, loading, error } = useCMS69Evaluation(patientId);
+  const { cms69Result, loading, error } = useCMS69EvaluationShared();
   const { measurementPeriod } = useMeasurementPeriod();
 
   // Combine high and low BMI interventions performed

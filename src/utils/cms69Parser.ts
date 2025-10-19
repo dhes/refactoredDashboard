@@ -42,6 +42,11 @@ export interface CMS69Result {
   needsScreeningBanner: string | null; // From "Needs Screening Banner"
   denominatorExceptionBanner: string | null; // From "Denominator Exception Banner"
   
+  // New dynamic exception banner data
+  bmiExceptionBannerText?: string; // From "BMI Exception Banner Text"
+  bmiExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Not Done Category"
+  bmiExceptionDetail?: string; // From "BMI Not Done Reason Display"
+  
   allGoalsMet: string | false;
   otherParameters: CMS69Parameter[];
   allParameters: CMS69Parameter[];
@@ -135,6 +140,11 @@ export function processCMS69Response(response: any): CMS69Result {
   let needsScreeningBanner: string | null = null;
   let denominatorExceptionBanner: string | null = null;
   let isPregnant: boolean | null = null;
+  
+  // New dynamic exception banner variables
+  let bmiExceptionBannerText: string | undefined = undefined;
+  let bmiExceptionCategory: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason' | undefined = undefined;
+  let bmiExceptionDetail: string | undefined = undefined;
   
   let allGoalsMet: string | false = false;
   const otherParameters: CMS69Parameter[] = [];
@@ -234,6 +244,18 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         denominatorExceptionBanner = value;
       }
+    } else if (name === 'BMI Exception Banner Text') {
+      if (typeof value === 'string') {
+        bmiExceptionBannerText = value;
+      }
+    } else if (name === 'BMI Not Done Category') {
+      if (typeof value === 'string' && (value === 'Medical Reason' || value === 'Patient Reason' || value === 'Unknown Reason')) {
+        bmiExceptionCategory = value as 'Medical Reason' | 'Patient Reason' | 'Unknown Reason';
+      }
+    } else if (name === 'BMI Not Done Reason Display') {
+      if (typeof value === 'string') {
+        bmiExceptionDetail = value;
+      }
     }
 
     // Skip resource types for other processing
@@ -296,6 +318,9 @@ export function processCMS69Response(response: any): CMS69Result {
     lowBMIFollowUpBanner,
     needsScreeningBanner,
     denominatorExceptionBanner,
+    bmiExceptionBannerText,
+    bmiExceptionCategory,
+    bmiExceptionDetail,
     allGoalsMet,
     otherParameters,
     allParameters
