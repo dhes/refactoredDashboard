@@ -83,20 +83,39 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
 
   const bmiInterpretation = getBMIInterpretation();
 
-  // Enhanced BMI exception banner logic
+  // Enhanced BMI exception banner logic with prioritization
   const getBMIExceptionBanner = () => {
     if (cms69Result?.denominatorExceptions) {
-      // Use detailed text if available, fallback to generic
-      const bannerText = cms69Result.bmiExceptionBannerText || 
-        'BMI Assessment Exception: Clinical contraindication documented. Quality measure requirements do not apply to this patient.';
+      // Priority 1: BMI Assessment Exception (measurement not done)
+      if (cms69Result.bmiExceptionBannerText) {
+        return {
+          type: 'assessment-exception',
+          message: cms69Result.bmiExceptionBannerText,
+          category: cms69Result.bmiExceptionCategory,
+          color: cms69Result.bmiExceptionCategory === 'Medical Reason'
+            ? 'bg-orange-100 border-orange-200 text-orange-800'  // Medical contraindication
+            : 'bg-blue-100 border-blue-200 text-blue-800'        // Patient choice
+        };
+      }
       
+      // Priority 2: BMI Follow-Up Exception (follow-up not provided)
+      if (cms69Result.bmiFollowUpExceptionBannerText) {
+        return {
+          type: 'followup-exception', 
+          message: cms69Result.bmiFollowUpExceptionBannerText,
+          category: cms69Result.bmiFollowUpExceptionCategory,
+          color: cms69Result.bmiFollowUpExceptionCategory === 'Medical Reason'
+            ? 'bg-orange-100 border-orange-200 text-orange-800'  // Medical contraindication
+            : 'bg-blue-100 border-blue-200 text-blue-800'        // Patient choice
+        };
+      }
+      
+      // Fallback: Generic message (shouldn't happen with new logic)
       return {
-        type: 'exception',
-        message: bannerText,
-        category: cms69Result.bmiExceptionCategory,
-        color: cms69Result.bmiExceptionCategory === 'Medical Reason'
-          ? 'bg-orange-100 border-orange-200 text-orange-800'  // Medical contraindication
-          : 'bg-blue-100 border-blue-200 text-blue-800'        // Patient choice
+        type: 'generic-exception',
+        message: 'BMI Assessment Exception: Clinical contraindication documented. Quality measure requirements do not apply to this patient.',
+        category: 'Unknown',
+        color: 'bg-gray-100 border-gray-200 text-gray-800'
       };
     }
     return null;

@@ -47,6 +47,11 @@ export interface CMS69Result {
   bmiExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Not Done Category"
   bmiExceptionDetail?: string; // From "BMI Not Done Reason Display"
   
+  // BMI Follow-Up exception banner data
+  bmiFollowUpExceptionBannerText?: string; // From "BMI Follow-Up Exception Banner Text"
+  bmiFollowUpExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Follow-Up Not Done Category"
+  bmiFollowUpExceptionDetail?: string; // From "BMI Follow-Up Not Done Reason Display"
+  
   allGoalsMet: string | false;
   otherParameters: CMS69Parameter[];
   allParameters: CMS69Parameter[];
@@ -145,6 +150,11 @@ export function processCMS69Response(response: any): CMS69Result {
   let bmiExceptionBannerText: string | undefined = undefined;
   let bmiExceptionCategory: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason' | undefined = undefined;
   let bmiExceptionDetail: string | undefined = undefined;
+  
+  // BMI Follow-Up exception banner variables
+  let bmiFollowUpExceptionBannerText: string | undefined = undefined;
+  let bmiFollowUpExceptionCategory: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason' | undefined = undefined;
+  let bmiFollowUpExceptionDetail: string | undefined = undefined;
   
   let allGoalsMet: string | false = false;
   const otherParameters: CMS69Parameter[] = [];
@@ -256,6 +266,18 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         bmiExceptionDetail = value;
       }
+    } else if (name === 'BMI Follow-Up Exception Banner Text') {
+      if (typeof value === 'string') {
+        bmiFollowUpExceptionBannerText = value;
+      }
+    } else if (name === 'BMI Follow-Up Not Done Category') {
+      if (typeof value === 'string' && (value === 'Medical Reason' || value === 'Patient Reason' || value === 'Unknown Reason')) {
+        bmiFollowUpExceptionCategory = value as 'Medical Reason' | 'Patient Reason' | 'Unknown Reason';
+      }
+    } else if (name === 'BMI Follow-Up Not Done Reason Display') {
+      if (typeof value === 'string') {
+        bmiFollowUpExceptionDetail = value;
+      }
     }
 
     // Skip resource types for other processing
@@ -321,6 +343,9 @@ export function processCMS69Response(response: any): CMS69Result {
     bmiExceptionBannerText,
     bmiExceptionCategory,
     bmiExceptionDetail,
+    bmiFollowUpExceptionBannerText,
+    bmiFollowUpExceptionCategory,
+    bmiFollowUpExceptionDetail,
     allGoalsMet,
     otherParameters,
     allParameters
