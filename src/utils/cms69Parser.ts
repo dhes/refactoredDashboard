@@ -14,6 +14,13 @@ export interface BMIObservation {
   status: string;
 }
 
+export interface NotDoneException {
+  category: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason';
+  bannerCode: string;    // For hover display (e.g., "sct|183932001")
+  display: string;       // Human readable reason
+  bannerText: string;    // Complete banner message
+}
+
 export interface CMS69Result {
   practitionerAlert: boolean; // true when Patient Score = 0 (eligible but no intervention)
   initialPopulation: boolean | null;
@@ -42,12 +49,15 @@ export interface CMS69Result {
   needsScreeningBanner: string | null; // From "Needs Screening Banner"
   denominatorExceptionBanner: string | null; // From "Denominator Exception Banner"
   
-  // New dynamic exception banner data
+  // Unified exception data (replaces old exception banner logic)
+  notDoneExceptions: NotDoneException[]; // From "Not Done Exceptions"
+  
+  // Legacy exception banner data (for backward compatibility during transition)
   bmiExceptionBannerText?: string; // From "BMI Exception Banner Text"
   bmiExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Not Done Category"
   bmiExceptionDetail?: string; // From "BMI Not Done Reason Display"
   
-  // BMI Follow-Up exception banner data
+  // BMI Follow-Up exception banner data (for backward compatibility during transition)
   bmiFollowUpExceptionBannerText?: string; // From "BMI Follow-Up Exception Banner Text"
   bmiFollowUpExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Follow-Up Not Done Category"
   bmiFollowUpExceptionDetail?: string; // From "BMI Follow-Up Not Done Reason Display"
@@ -155,6 +165,9 @@ export function processCMS69Response(response: any): CMS69Result {
   let bmiFollowUpExceptionBannerText: string | undefined = undefined;
   let bmiFollowUpExceptionCategory: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason' | undefined = undefined;
   let bmiFollowUpExceptionDetail: string | undefined = undefined;
+  
+  // New unified exception data
+  const notDoneExceptions: NotDoneException[] = [];
   
   let allGoalsMet: string | false = false;
   const otherParameters: CMS69Parameter[] = [];
@@ -278,6 +291,26 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         bmiFollowUpExceptionDetail = value;
       }
+    } else if (name === 'Not Done Exceptions') {
+      // Handle the new unified exception structure
+      if (param.part && Array.isArray(param.part)) {
+        // This is a single exception with parts
+        const exception = parseExceptionFromParts(param.part);
+        if (exception) {
+          notDoneExceptions.push(exception);
+        }
+      } else if (Array.isArray(param) || (param.resource && Array.isArray(param.resource))) {
+        // Handle multiple exceptions
+        const exceptionsArray = Array.isArray(param) ? param : param.resource;
+        exceptionsArray.forEach((exceptionParam: any) => {
+          if (exceptionParam.part && Array.isArray(exceptionParam.part)) {
+            const exception = parseExceptionFromParts(exceptionParam.part);
+            if (exception) {
+              notDoneExceptions.push(exception);
+            }
+          }
+        });
+      }
     }
 
     // Skip resource types for other processing
@@ -346,10 +379,35 @@ export function processCMS69Response(response: any): CMS69Result {
     bmiFollowUpExceptionBannerText,
     bmiFollowUpExceptionCategory,
     bmiFollowUpExceptionDetail,
+    notDoneExceptions,
     allGoalsMet,
     otherParameters,
     allParameters
   };
+}
+
+// Helper function to parse exception from FHIR parameter parts
+function parseExceptionFromParts(parts: any[]): NotDoneException | null {
+  const exception: Partial<NotDoneException> = {};
+  
+  parts.forEach(part => {
+    if (part.name === 'category' && part.valueString) {
+      exception.category = part.valueString as 'Medical Reason' | 'Patient Reason' | 'Unknown Reason';
+    } else if (part.name === 'bannerCode' && part.valueString) {
+      exception.bannerCode = part.valueString;
+    } else if (part.name === 'display' && part.valueString) {
+      exception.display = part.valueString;
+    } else if (part.name === 'bannerText' && part.valueString) {
+      exception.bannerText = part.valueString;
+    }
+  });
+  
+  // Validate that we have all required fields
+  if (exception.category && exception.bannerCode && exception.display && exception.bannerText) {
+    return exception as NotDoneException;
+  }
+  
+  return null;
 }
 
 export function getBMICategory(bmi: number): { category: string; color: string; description: string } {

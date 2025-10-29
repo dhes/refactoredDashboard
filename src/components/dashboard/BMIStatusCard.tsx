@@ -4,6 +4,7 @@ import { Card, CardContent } from '../ui/card';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 import { useCMS69EvaluationShared } from '../../hooks/useCMS69EvaluationShared';
 import { getBMICategory, type BMIObservation } from '../../utils/cms69Parser';
+import { ExceptionBanners } from '../ui/ExceptionBanner';
 
 interface BMIStatusCardProps {
   patientId: string;
@@ -83,45 +84,8 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
 
   const bmiInterpretation = getBMIInterpretation();
 
-  // Enhanced BMI exception banner logic with prioritization
-  const getBMIExceptionBanner = () => {
-    if (cms69Result?.denominatorExceptions) {
-      // Priority 1: BMI Assessment Exception (measurement not done)
-      if (cms69Result.bmiExceptionBannerText) {
-        return {
-          type: 'assessment-exception',
-          message: cms69Result.bmiExceptionBannerText,
-          category: cms69Result.bmiExceptionCategory,
-          color: cms69Result.bmiExceptionCategory === 'Medical Reason'
-            ? 'bg-orange-100 border-orange-200 text-orange-800'  // Medical contraindication
-            : 'bg-blue-100 border-blue-200 text-blue-800'        // Patient choice
-        };
-      }
-      
-      // Priority 2: BMI Follow-Up Exception (follow-up not provided)
-      if (cms69Result.bmiFollowUpExceptionBannerText) {
-        return {
-          type: 'followup-exception', 
-          message: cms69Result.bmiFollowUpExceptionBannerText,
-          category: cms69Result.bmiFollowUpExceptionCategory,
-          color: cms69Result.bmiFollowUpExceptionCategory === 'Medical Reason'
-            ? 'bg-orange-100 border-orange-200 text-orange-800'  // Medical contraindication
-            : 'bg-blue-100 border-blue-200 text-blue-800'        // Patient choice
-        };
-      }
-      
-      // Fallback: Generic message (shouldn't happen with new logic)
-      return {
-        type: 'generic-exception',
-        message: 'BMI Assessment Exception: Clinical contraindication documented. Quality measure requirements do not apply to this patient.',
-        category: 'Unknown',
-        color: 'bg-gray-100 border-gray-200 text-gray-800'
-      };
-    }
-    return null;
-  };
-
-  const exceptionBanner = getBMIExceptionBanner();
+  // Get unified exception data from CQL
+  const notDoneExceptions = cms69Result?.notDoneExceptions || [];
 
   return (
     <Card>
@@ -143,24 +107,11 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           </div>
         )}
 
-        {/* Enhanced BMI Exception Banner */}
-        {exceptionBanner && (
-          <div className={`mb-3 p-3 rounded-lg ${exceptionBanner.color}`}>
-            <div className="flex items-center gap-2">
-              <span className="text-lg">
-                {exceptionBanner.category === 'Medical Reason' ? '⚠️' : '👤'}
-              </span>
-              <div>
-                <div className="font-medium">
-                  {exceptionBanner.message}
-                </div>
-                <div className="text-sm mt-1 opacity-80">
-                  Quality measure requirements do not apply to this patient.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Unified Exception Banners */}
+        <ExceptionBanners 
+          exceptions={notDoneExceptions} 
+          className="mb-3"
+        />
 
         {/* BMI Success Banner */}
         {cms69Result?.patientScore === 1 && (
