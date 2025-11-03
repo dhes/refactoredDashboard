@@ -47,6 +47,7 @@ export interface CMS69Result {
   highBMIFollowUpBanner: string | null; // From "High BMI Follow Up Banner"
   lowBMIFollowUpBanner: string | null; // From "Low BMI Follow Up Banner"
   needsScreeningBanner: string | null; // From "Needs Screening Banner"
+  needsEncounterBanner: string | null; // From "Needs Encounter Banner"
   denominatorExceptionBanner: string | null; // From "Denominator Exception Banner"
   
   // Unified exception data (replaces old exception banner logic)
@@ -153,6 +154,7 @@ export function processCMS69Response(response: any): CMS69Result {
   let highBMIFollowUpBanner: string | null = null;
   let lowBMIFollowUpBanner: string | null = null;
   let needsScreeningBanner: string | null = null;
+  let needsEncounterBanner: string | null = null;
   let denominatorExceptionBanner: string | null = null;
   let isPregnant: boolean | null = null;
   
@@ -263,6 +265,10 @@ export function processCMS69Response(response: any): CMS69Result {
       if (typeof value === 'string') {
         needsScreeningBanner = value;
       }
+    } else if (name === 'Needs Encounter Banner') {
+      if (typeof value === 'string') {
+        needsEncounterBanner = value;
+      }
     } else if (name === 'Denominator Exception Banner') {
       if (typeof value === 'string') {
         denominatorExceptionBanner = value;
@@ -372,6 +378,7 @@ export function processCMS69Response(response: any): CMS69Result {
     highBMIFollowUpBanner,
     lowBMIFollowUpBanner,
     needsScreeningBanner,
+    needsEncounterBanner,
     denominatorExceptionBanner,
     bmiExceptionBannerText,
     bmiExceptionCategory,

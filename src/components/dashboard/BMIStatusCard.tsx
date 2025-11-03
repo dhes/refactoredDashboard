@@ -87,6 +87,12 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
   // Get unified exception data from CQL
   const notDoneExceptions = cms69Result?.notDoneExceptions || [];
 
+  // Collect action-needed banners (can have 0, 1, or 2)
+  const actionBanners = [
+    cms69Result?.needsEncounterBanner,
+    cms69Result?.needsScreeningBanner
+  ].filter(Boolean) as string[];
+
   return (
     <Card>
       <CardContent>
@@ -108,10 +114,26 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
         )}
 
         {/* Unified Exception Banners */}
-        <ExceptionBanners 
-          exceptions={notDoneExceptions} 
+        <ExceptionBanners
+          exceptions={notDoneExceptions}
           className="mb-3"
         />
+
+        {/* Action Needed Banners */}
+        {actionBanners.length > 0 && (
+          <div className="space-y-3 mb-3">
+            {actionBanners.map((banner, index) => (
+              <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <div className="font-medium text-yellow-800">
+                    {banner}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* BMI Success Banner */}
         {cms69Result?.patientScore === 1 && (

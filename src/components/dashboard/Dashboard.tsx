@@ -133,13 +133,13 @@ const Dashboard = () => {
         {/* Smoking Status 
         <SmokingStatusCard patientId={selectedPatientId} />*/}
 
-        {/* Tobacco Status (CQL-driven) */}
-        <TobaccoStatusCard
+        {/* Temporarily hidden - Tobacco Status (CQL-driven) */}
+        {/* <TobaccoStatusCard
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
           error={cms138Error}
-        />
+        /> */}
 
         {/* BMI Status (CQL-driven) */}
         <BMIStatusCard patientId={selectedPatientId} />
@@ -147,13 +147,13 @@ const Dashboard = () => {
         {/* BMI Interventions Performed - shows CQL-filtered BMI procedures */}
         <BMIInterventionsPerformedPane patientId={selectedPatientId} />
 
-        {/* Tobacco Cessation Counseling - shows CQL-filtered counseling procedures */}
-        <TobaccoCessationCounselingCard
+        {/* temporarily suppuress - Tobacco Cessation Counseling - shows CQL-filtered counseling procedures */}
+        {/* <TobaccoCessationCounselingCard
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
           error={cms138Error}
-        />
+        /> */}
 
         {/* All Goals Met - shows when tobacco screening is complete */}
         <AllGoalsMetCard 
@@ -185,21 +185,21 @@ const Dashboard = () => {
           error={cms138Error}
         />
 
-        {/* Tobacco Cessation Medications - shows CQL-filtered medications */}
-        <TobaccoCessationMedicationsCard
+        {/* temporarily suppressed - Tobacco Cessation Medications - shows CQL-filtered medications */}
+        {/* <TobaccoCessationMedicationsCard
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
           error={cms138Error}
-        />
+        /> */}
 
-        {/* CMS138 Developer View - shows complete measure evaluation */}
-        <CMS138DeveloperCard
+        {/* temporarily suppressed - CMS138 Developer View - shows complete measure evaluation */}
+        {/* <CMS138DeveloperCard
           patientId={selectedPatientId}
           cms138Result={cms138Result}
           loading={cms138Loading}
           error={cms138Error}
-        />
+        /> */}
 
         {/* Recent Encounters */}
         <EncounterPane patientId={selectedPatientId} />
