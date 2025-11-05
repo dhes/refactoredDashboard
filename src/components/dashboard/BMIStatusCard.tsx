@@ -5,6 +5,7 @@ import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 import { useCMS69EvaluationShared } from '../../hooks/useCMS69EvaluationShared';
 import { getBMICategory, type BMIObservation } from '../../utils/cms69Parser';
 import { ExceptionBanners } from '../ui/ExceptionBanner';
+import { CreateEncounterForm } from '../forms/CreateEncounterForm';
 
 interface BMIStatusCardProps {
   patientId: string;
@@ -12,8 +13,9 @@ interface BMIStatusCardProps {
 
 export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
   const [showBMIStatus, setShowBMIStatus] = useState(false);
+  const [showEncounterForm, setShowEncounterForm] = useState(false);
   const { measurementPeriod } = useMeasurementPeriod();
-  const { cms69Result, loading, error } = useCMS69EvaluationShared();
+  const { cms69Result, loading, error, refetch } = useCMS69EvaluationShared();
 
   // Get the most recent BMI observation
   const mostRecentBMI = cms69Result?.bmiObservations?.[0] || null;
@@ -119,19 +121,52 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           className="mb-3"
         />
 
-        {/* Action Needed Banners */}
-        {actionBanners.length > 0 && (
+        {/* Action Needed Banners - Option 5: Split Layout with Arrow */}
+        {actionBanners.length > 0 && !showEncounterForm && (
           <div className="space-y-3 mb-3">
-            {actionBanners.map((banner, index) => (
-              <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">⚠️</span>
-                  <div className="font-medium text-yellow-800">
-                    {banner}
+            {actionBanners.map((banner, index) => {
+              // Determine if this is an encounter banner
+              const isEncounterBanner = banner === cms69Result?.needsEncounterBanner;
+
+              return (
+                <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">⚠️</span>
+                      <div className="font-medium text-yellow-800">
+                        {banner}
+                      </div>
+                    </div>
+                    {isEncounterBanner && (
+                      <button
+                        onClick={() => setShowEncounterForm(true)}
+                        className="text-blue-600 hover:text-blue-800 font-bold text-xl transition-colors"
+                        title="Create encounter"
+                      >
+                        →
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+          </div>
+        )}
+
+        {/* Encounter Creation Form */}
+        {showEncounterForm && (
+          <div className="mb-3">
+            <CreateEncounterForm
+              patientId={patientId}
+              onSuccess={() => {
+                setShowEncounterForm(false);
+                // Refresh CMS69 evaluation after creating encounter
+                if (refetch) {
+                  refetch();
+                }
+              }}
+              onCancel={() => setShowEncounterForm(false)}
+            />
           </div>
         )}
 

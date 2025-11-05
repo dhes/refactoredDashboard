@@ -10,6 +10,7 @@ interface CMS69EvaluationContextType {
   loading: boolean;
   error: Error | null;
   currentPatientId: string | undefined;
+  refetch: () => void;
 }
 
 const CMS69EvaluationContext = createContext<CMS69EvaluationContextType | undefined>(undefined);
@@ -19,17 +20,23 @@ interface CMS69EvaluationProviderProps {
   patientId: string | undefined;
 }
 
-export const CMS69EvaluationProvider: React.FC<CMS69EvaluationProviderProps> = ({ 
-  children, 
-  patientId 
+export const CMS69EvaluationProvider: React.FC<CMS69EvaluationProviderProps> = ({
+  children,
+  patientId
 }) => {
   const [cms69Result, setCms69Result] = useState<CMS69Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [currentPatientId, setCurrentPatientId] = useState<string | undefined>(undefined);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   // Get measurement period from context
   const { measurementPeriod, isInitialized } = useMeasurementPeriod();
+
+  // Manual refetch function
+  const refetch = () => {
+    setRefetchTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     if (!patientId || !isInitialized) {
@@ -56,7 +63,7 @@ export const CMS69EvaluationProvider: React.FC<CMS69EvaluationProviderProps> = (
       })
       .catch(setError)
       .finally(() => setLoading(false));
-  }, [patientId, measurementPeriod, isInitialized]);
+  }, [patientId, measurementPeriod, isInitialized, refetchTrigger]);
 
   return (
     <CMS69EvaluationContext.Provider
@@ -64,7 +71,8 @@ export const CMS69EvaluationProvider: React.FC<CMS69EvaluationProviderProps> = (
         cms69Result,
         loading,
         error,
-        currentPatientId
+        currentPatientId,
+        refetch
       }}
     >
       {children}

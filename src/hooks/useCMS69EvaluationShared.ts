@@ -6,11 +6,12 @@ import { useCMS69EvaluationContext } from '../contexts/CMS69EvaluationContext';
  * This ensures only one API call per patient/measurement period combination.
  */
 export const useCMS69EvaluationShared = () => {
-  const { cms69Result, loading, error } = useCMS69EvaluationContext();
-  
-  return { 
+  const { cms69Result, loading, error, refetch } = useCMS69EvaluationContext();
+
+  return {
     cms69Result,
-    loading, 
-    error
+    loading,
+    error,
+    refetch
   };
 };
