@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { useMeasurementPeriod } from '../../contexts/MeasurementPeriodContext';
 import { useCMS69EvaluationShared } from '../../hooks/useCMS69EvaluationShared';
-import { getBMICategory, type BMIObservation } from '../../utils/cms69Parser';
+import { getBMICategory } from '../../utils/cms69Parser';
 import { ExceptionBanners } from '../ui/ExceptionBanner';
 import { CreateEncounterForm } from '../forms/CreateEncounterForm';
+import { CreateBMIForm } from '../forms/CreateBMIForm';
 
 interface BMIStatusCardProps {
   patientId: string;
@@ -14,6 +15,7 @@ interface BMIStatusCardProps {
 export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
   const [showBMIStatus, setShowBMIStatus] = useState(false);
   const [showEncounterForm, setShowEncounterForm] = useState(false);
+  const [showBMIForm, setShowBMIForm] = useState(false);
   const { measurementPeriod } = useMeasurementPeriod();
   const { cms69Result, loading, error, refetch } = useCMS69EvaluationShared();
 
@@ -122,11 +124,12 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
         />
 
         {/* Action Needed Banners - Option 5: Split Layout with Arrow */}
-        {actionBanners.length > 0 && !showEncounterForm && (
+        {actionBanners.length > 0 && !showEncounterForm && !showBMIForm && (
           <div className="space-y-3 mb-3">
             {actionBanners.map((banner, index) => {
-              // Determine if this is an encounter banner
+              // Determine which type of banner this is
               const isEncounterBanner = banner === cms69Result?.needsEncounterBanner;
+              const isScreeningBanner = banner === cms69Result?.needsScreeningBanner;
 
               return (
                 <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -142,6 +145,15 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
                         onClick={() => setShowEncounterForm(true)}
                         className="text-blue-600 hover:text-blue-800 font-bold text-xl transition-colors"
                         title="Create encounter"
+                      >
+                        →
+                      </button>
+                    )}
+                    {isScreeningBanner && (
+                      <button
+                        onClick={() => setShowBMIForm(true)}
+                        className="text-blue-600 hover:text-blue-800 font-bold text-xl transition-colors"
+                        title="Record BMI"
                       >
                         →
                       </button>
@@ -166,6 +178,23 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
                 }
               }}
               onCancel={() => setShowEncounterForm(false)}
+            />
+          </div>
+        )}
+
+        {/* BMI Recording Form */}
+        {showBMIForm && (
+          <div className="mb-3">
+            <CreateBMIForm
+              patientId={patientId}
+              onSuccess={() => {
+                setShowBMIForm(false);
+                // Refresh CMS69 evaluation after creating BMI observations
+                if (refetch) {
+                  refetch();
+                }
+              }}
+              onCancel={() => setShowBMIForm(false)}
             />
           </div>
         )}
