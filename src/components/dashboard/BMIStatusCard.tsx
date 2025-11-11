@@ -7,6 +7,7 @@ import { getBMICategory } from '../../utils/cms69Parser';
 import { ExceptionBanners } from '../ui/ExceptionBanner';
 import { CreateEncounterForm } from '../forms/CreateEncounterForm';
 import { CreateBMIForm } from '../forms/CreateBMIForm';
+import { CreateBMIInterventionForm } from '../forms/CreateBMIInterventionForm';
 
 interface BMIStatusCardProps {
   patientId: string;
@@ -16,6 +17,7 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
   const [showBMIStatus, setShowBMIStatus] = useState(false);
   const [showEncounterForm, setShowEncounterForm] = useState(false);
   const [showBMIForm, setShowBMIForm] = useState(false);
+  const [showInterventionForm, setShowInterventionForm] = useState(false);
   const { measurementPeriod } = useMeasurementPeriod();
   const { cms69Result, loading, error, refetch } = useCMS69EvaluationShared();
 
@@ -217,19 +219,45 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
         )}
 
         {/* High BMI Follow Up Banner */}
-        {cms69Result?.highBMIFollowUpBanner && (
+        {cms69Result?.highBMIFollowUpBanner && !showInterventionForm && (
           <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">⚖️</span>
-              <div>
-                <div className="font-medium text-orange-800">
-                  High BMI Follow-Up Required
-                </div>
-                <div className="text-sm text-orange-700 mt-1">
-                  {cms69Result.highBMIFollowUpBanner}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⚖️</span>
+                <div>
+                  <div className="font-medium text-orange-800">
+                    High BMI Follow-Up Required
+                  </div>
+                  <div className="text-sm text-orange-700 mt-1">
+                    {cms69Result.highBMIFollowUpBanner}
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => setShowInterventionForm(true)}
+                className="text-blue-600 hover:text-blue-800 font-bold text-xl transition-colors"
+                title="Record intervention"
+              >
+                →
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* BMI Intervention Form */}
+        {showInterventionForm && (
+          <div className="mb-3">
+            <CreateBMIInterventionForm
+              patientId={patientId}
+              onSuccess={() => {
+                setShowInterventionForm(false);
+                // Refresh CMS69 evaluation after creating intervention
+                if (refetch) {
+                  refetch();
+                }
+              }}
+              onCancel={() => setShowInterventionForm(false)}
+            />
           </div>
         )}
 

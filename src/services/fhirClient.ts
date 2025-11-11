@@ -85,6 +85,10 @@ class FHIRClient {
     return fetchFHIR<Procedure>("Procedure", `patient=Patient/${patientId}`);
   }
 
+  async createProcedure(procedure: Procedure): Promise<Procedure> {
+    return createFHIR(procedure);
+  }
+
   // Immunization operations
   async getImmunizations(patientId: string): Promise<Immunization[]> {
     return fetchFHIR<Immunization>("Immunization", `patient=Patient/${patientId}`);
