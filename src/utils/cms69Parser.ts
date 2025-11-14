@@ -52,17 +52,27 @@ export interface CMS69Result {
   
   // Unified exception data (replaces old exception banner logic)
   notDoneExceptions: NotDoneException[]; // From "Not Done Exceptions"
-  
+
   // Legacy exception banner data (for backward compatibility during transition)
   bmiExceptionBannerText?: string; // From "BMI Exception Banner Text"
   bmiExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Not Done Category"
   bmiExceptionDetail?: string; // From "BMI Not Done Reason Display"
-  
+
   // BMI Follow-Up exception banner data (for backward compatibility during transition)
   bmiFollowUpExceptionBannerText?: string; // From "BMI Follow-Up Exception Banner Text"
   bmiFollowUpExceptionCategory?: 'Medical Reason' | 'Patient Reason' | 'Unknown Reason'; // From "BMI Follow-Up Not Done Category"
   bmiFollowUpExceptionDetail?: string; // From "BMI Follow-Up Not Done Reason Display"
-  
+
+  // Condition-related data (for Problem-Oriented Medical Record workflow)
+  hasActiveHighBMICondition: boolean | null; // From "Has Active High BMI Condition"
+  hasActiveLowBMICondition: boolean | null; // From "Has Active Low BMI Condition"
+  needHighBMIConditionBanner: string | null; // From "Need High BMI Condition Banner"
+  needLowBMIConditionBanner: string | null; // From "Need Low BMI Condition Banner"
+  suggestedHighBMIConditionCode: string | null; // From "Suggested High BMI Condition Code" (ICD-10)
+  suggestedLowBMIConditionCode: string | null; // From "Suggested Low BMI Condition Code" (ICD-10)
+  mostRecentHighBMIValue: number | null; // From "Most Recent High BMI Value" (kg/m2)
+  mostRecentLowBMIValue: number | null; // From "Most Recent Low BMI Value" (kg/m2)
+
   allGoalsMet: string | false;
   otherParameters: CMS69Parameter[];
   allParameters: CMS69Parameter[];
@@ -170,7 +180,17 @@ export function processCMS69Response(response: any): CMS69Result {
   
   // New unified exception data
   const notDoneExceptions: NotDoneException[] = [];
-  
+
+  // Condition-related data
+  let hasActiveHighBMICondition: boolean | null = null;
+  let hasActiveLowBMICondition: boolean | null = null;
+  let needHighBMIConditionBanner: string | null = null;
+  let needLowBMIConditionBanner: string | null = null;
+  let suggestedHighBMIConditionCode: string | null = null;
+  let suggestedLowBMIConditionCode: string | null = null;
+  let mostRecentHighBMIValue: number | null = null;
+  let mostRecentLowBMIValue: number | null = null;
+
   let allGoalsMet: string | false = false;
   const otherParameters: CMS69Parameter[] = [];
 
@@ -347,6 +367,36 @@ export function processCMS69Response(response: any): CMS69Result {
       hasNormalBMI = value === 'empty-list' ? null : value as boolean | null;
     } else if (name === 'Is Pregnant During Day Of Measurement Period') {
       isPregnant = value === 'empty-list' ? null : value as boolean | null;
+    } else if (name === 'Has Active High BMI Condition') {
+      hasActiveHighBMICondition = value === 'empty-list' ? null : value as boolean | null;
+    } else if (name === 'Has Active Low BMI Condition') {
+      hasActiveLowBMICondition = value === 'empty-list' ? null : value as boolean | null;
+    } else if (name === 'Need High BMI Condition Banner') {
+      if (typeof value === 'string') {
+        needHighBMIConditionBanner = value;
+      }
+    } else if (name === 'Need Low BMI Condition Banner') {
+      if (typeof value === 'string') {
+        needLowBMIConditionBanner = value;
+      }
+    } else if (name === 'Suggested High BMI Condition Code') {
+      if (typeof value === 'string') {
+        suggestedHighBMIConditionCode = value;
+      }
+    } else if (name === 'Suggested Low BMI Condition Code') {
+      if (typeof value === 'string') {
+        suggestedLowBMIConditionCode = value;
+      }
+    } else if (name === 'Most Recent High BMI Value') {
+      // This comes as a Quantity, need to extract from param.valueQuantity
+      if (param.valueQuantity?.value) {
+        mostRecentHighBMIValue = param.valueQuantity.value;
+      }
+    } else if (name === 'Most Recent Low BMI Value') {
+      // This comes as a Quantity, need to extract from param.valueQuantity
+      if (param.valueQuantity?.value) {
+        mostRecentLowBMIValue = param.valueQuantity.value;
+      }
     } else if (value !== 'empty-list' && value !== null) {
       // Include non-null, non-empty parameters
       otherParameters.push(cms69Param);
@@ -387,6 +437,14 @@ export function processCMS69Response(response: any): CMS69Result {
     bmiFollowUpExceptionCategory,
     bmiFollowUpExceptionDetail,
     notDoneExceptions,
+    hasActiveHighBMICondition,
+    hasActiveLowBMICondition,
+    needHighBMIConditionBanner,
+    needLowBMIConditionBanner,
+    suggestedHighBMIConditionCode,
+    suggestedLowBMIConditionCode,
+    mostRecentHighBMIValue,
+    mostRecentLowBMIValue,
     allGoalsMet,
     otherParameters,
     allParameters

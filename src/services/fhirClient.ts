@@ -129,6 +129,10 @@ class FHIRClient {
   async getConditions(patientId: string): Promise<Condition[]> {
     return fetchFHIR<Condition>("Condition", `patient=Patient/${patientId}`);
   }
+
+  async createCondition(condition: Condition): Promise<Condition> {
+    return createFHIR(condition);
+  }
   // You might also want to add these related methods:
   async createAllergy(allergy: AllergyIntolerance): Promise<AllergyIntolerance> {
     return createFHIR(allergy);

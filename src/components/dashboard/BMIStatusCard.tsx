@@ -8,6 +8,7 @@ import { ExceptionBanners } from '../ui/ExceptionBanner';
 import { CreateEncounterForm } from '../forms/CreateEncounterForm';
 import { CreateBMIForm } from '../forms/CreateBMIForm';
 import { CreateBMIInterventionForm } from '../forms/CreateBMIInterventionForm';
+import { CreateConditionForm } from '../forms/CreateConditionForm';
 
 interface BMIStatusCardProps {
   patientId: string;
@@ -18,6 +19,8 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
   const [showEncounterForm, setShowEncounterForm] = useState(false);
   const [showBMIForm, setShowBMIForm] = useState(false);
   const [showInterventionForm, setShowInterventionForm] = useState(false);
+  const [showHighBMIConditionForm, setShowHighBMIConditionForm] = useState(false);
+  const [showLowBMIConditionForm, setShowLowBMIConditionForm] = useState(false);
   const { measurementPeriod } = useMeasurementPeriod();
   const { cms69Result, loading, error, refetch } = useCMS69EvaluationShared();
 
@@ -218,8 +221,100 @@ export const BMIStatusCard: React.FC<BMIStatusCardProps> = ({ patientId }) => {
           </div>
         )}
 
-        {/* High BMI Follow Up Banner */}
-        {cms69Result?.highBMIFollowUpBanner && !showInterventionForm && (
+        {/* High BMI Condition Banner - Must come BEFORE intervention */}
+        {cms69Result?.needHighBMIConditionBanner && !showHighBMIConditionForm && (
+          <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                <div>
+                  <div className="font-medium text-purple-800">
+                    Diagnosis Required
+                  </div>
+                  <div className="text-sm text-purple-700 mt-1">
+                    {cms69Result.needHighBMIConditionBanner}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowHighBMIConditionForm(true)}
+                className="text-blue-600 hover:text-blue-800 font-bold text-xl transition-colors"
+                title="Add diagnosis"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* High BMI Condition Form */}
+        {showHighBMIConditionForm && (
+          <div className="mb-3">
+            <CreateConditionForm
+              patientId={patientId}
+              conditionType="high-bmi"
+              suggestedCode={cms69Result?.suggestedHighBMIConditionCode}
+              bmiValue={cms69Result?.mostRecentHighBMIValue}
+              onSuccess={() => {
+                setShowHighBMIConditionForm(false);
+                // Refresh CMS69 evaluation after creating condition
+                if (refetch) {
+                  refetch();
+                }
+              }}
+              onCancel={() => setShowHighBMIConditionForm(false)}
+            />
+          </div>
+        )}
+
+        {/* Low BMI Condition Banner - Must come BEFORE intervention */}
+        {cms69Result?.needLowBMIConditionBanner && !showLowBMIConditionForm && (
+          <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📋</span>
+                <div>
+                  <div className="font-medium text-purple-800">
+                    Diagnosis Required
+                  </div>
+                  <div className="text-sm text-purple-700 mt-1">
+                    {cms69Result.needLowBMIConditionBanner}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLowBMIConditionForm(true)}
+                className="text-blue-600 hover:text-blue-800 font-bold text-xl transition-colors"
+                title="Add diagnosis"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Low BMI Condition Form */}
+        {showLowBMIConditionForm && (
+          <div className="mb-3">
+            <CreateConditionForm
+              patientId={patientId}
+              conditionType="low-bmi"
+              suggestedCode={cms69Result?.suggestedLowBMIConditionCode}
+              bmiValue={cms69Result?.mostRecentLowBMIValue}
+              onSuccess={() => {
+                setShowLowBMIConditionForm(false);
+                // Refresh CMS69 evaluation after creating condition
+                if (refetch) {
+                  refetch();
+                }
+              }}
+              onCancel={() => setShowLowBMIConditionForm(false)}
+            />
+          </div>
+        )}
+
+        {/* High BMI Follow Up Banner - Only show if Condition exists */}
+        {cms69Result?.highBMIFollowUpBanner && !showInterventionForm && !cms69Result?.needHighBMIConditionBanner && (
           <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
