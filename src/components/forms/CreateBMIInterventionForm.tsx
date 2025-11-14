@@ -1,13 +1,14 @@
 // src/components/forms/CreateBMIInterventionForm.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import {
   INTERVENTION_TYPES,
-  BMI_REASON_CODES,
   createBMIIntervention,
   validateBMIInterventionForm,
   type BMIInterventionFormData
 } from '../../utils/bmiInterventionCreation';
+import { fhirClient } from '../../services/fhirClient';
+import type { Condition } from 'fhir/r4';
 
 interface CreateBMIInterventionFormProps {
   patientId: string;
@@ -24,12 +25,51 @@ export const CreateBMIInterventionForm: React.FC<CreateBMIInterventionFormProps>
     date: new Date().toISOString().split('T')[0], // Today's date
     time: new Date().toTimeString().slice(0, 5), // Current time
     interventionType: 'dietary-regime', // Default to only option
-    reasonCode: '162863004' // Default to overweight (25-29)
+    conditionId: undefined
   });
 
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [conditions, setConditions] = useState<Condition[]>([]);
+  const [loadingConditions, setLoadingConditions] = useState(true);
+
+  // Fetch patient's active Conditions on mount
+  useEffect(() => {
+    const fetchConditions = async () => {
+      try {
+        const allConditions = await fhirClient.getConditions(patientId);
+
+        // Filter for active BMI-related conditions (Overweight, Obese, Underweight)
+        const bmiConditions = allConditions.filter(condition => {
+          const isActive = condition.clinicalStatus?.coding?.some(
+            c => c.code === 'active'
+          );
+          const isBMIRelated = condition.code?.coding?.some(coding =>
+            coding.system === 'http://hl7.org/fhir/sid/icd-10-cm' && (
+              coding.code?.startsWith('E66') || // Overweight/Obesity codes
+              coding.code === 'E46' // Malnutrition/Underweight
+            )
+          );
+          return isActive && isBMIRelated;
+        });
+
+        setConditions(bmiConditions);
+
+        // Auto-select if only one condition
+        if (bmiConditions.length === 1 && bmiConditions[0].id) {
+          setFormData(prev => ({ ...prev, conditionId: bmiConditions[0].id }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch conditions:', error);
+        setErrors(['Failed to load conditions. You may proceed without selecting one.']);
+      } finally {
+        setLoadingConditions(false);
+      }
+    };
+
+    fetchConditions();
+  }, [patientId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,27 +139,47 @@ export const CreateBMIInterventionForm: React.FC<CreateBMIInterventionFormProps>
             </div>
           </div>
 
-          {/* Reason Code (Diagnosis) */}
+          {/* Condition Reference */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Reason for Intervention <span className="text-red-500">*</span>
+              Related Diagnosis {conditions.length > 0 && <span className="text-red-500">*</span>}
             </label>
-            <select
-              value={formData.reasonCode}
-              onChange={(e) => setFormData({ ...formData, reasonCode: e.target.value })}
-              className="w-full border rounded px-3 py-2"
-              required
-            >
-              <option value="">-- Select Reason --</option>
-              {Object.entries(BMI_REASON_CODES).map(([key, reason]) => (
-                <option key={key} value={reason.code}>
-                  {reason.display} ({reason.code})
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Select the diagnosis that applies to this patient
-            </p>
+            {loadingConditions ? (
+              <div className="p-3 bg-gray-50 border rounded">
+                <div className="text-sm text-gray-600">Loading conditions...</div>
+              </div>
+            ) : conditions.length > 0 ? (
+              <>
+                <select
+                  value={formData.conditionId || ''}
+                  onChange={(e) => setFormData({ ...formData, conditionId: e.target.value })}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                >
+                  <option value="">-- Select Diagnosis --</option>
+                  {conditions.map((condition) => {
+                    const code = condition.code?.coding?.[0];
+                    const display = code?.display || condition.code?.text || 'Unknown';
+                    const codeText = code?.code || '';
+                    return (
+                      <option key={condition.id} value={condition.id}>
+                        {codeText} - {display}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select the diagnosis that this intervention addresses
+                </p>
+              </>
+            ) : (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="text-sm text-yellow-800">
+                  ⚠️ No active BMI-related diagnoses found. You should add a diagnosis (E66.3, E66.811, etc.)
+                  to the problem list before recording an intervention.
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Date */}
@@ -175,7 +235,8 @@ export const CreateBMIInterventionForm: React.FC<CreateBMIInterventionFormProps>
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="text-sm text-blue-800">
             <strong>💡 Note:</strong> This records that you provided dietary counseling or regime therapy
-            to address the patient's high BMI. This satisfies the CMS69 measure Numerator requirement.
+            to address the patient's BMI-related diagnosis. The intervention will reference the selected
+            diagnosis from the problem list. This satisfies the CMS69 measure Numerator requirement.
           </div>
         </div>
       </CardContent>

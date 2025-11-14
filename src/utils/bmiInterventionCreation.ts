@@ -6,7 +6,7 @@ export interface BMIInterventionFormData {
   date: string;
   time?: string;
   interventionType: 'dietary-regime';
-  reasonCode: string; // SNOMED code for Overweight or Obese
+  conditionId?: string; // Reference to Condition resource (e.g., "5915")
 }
 
 /**
@@ -45,18 +45,12 @@ export const BMI_REASON_CODES = {
 const createProcedureResource = (
   patientId: string,
   interventionType: keyof typeof INTERVENTION_TYPES,
-  reasonCode: string,
+  conditionId: string | undefined,
   dateTime: string
 ): Procedure => {
   const intervention = INTERVENTION_TYPES[interventionType];
 
-  // Find the reason code details
-  const reasonCodeEntry = Object.values(BMI_REASON_CODES).find(rc => rc.code === reasonCode);
-  if (!reasonCodeEntry) {
-    throw new Error(`Invalid reason code: ${reasonCode}`);
-  }
-
-  return {
+  const procedure: Procedure = {
     resourceType: 'Procedure',
     meta: {
       profile: ['http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-procedure']
@@ -82,21 +76,19 @@ const createProcedureResource = (
     subject: {
       reference: `Patient/${patientId}`
     },
-    performedDateTime: dateTime,
-    reasonCode: [
-      {
-        coding: [
-          {
-            system: reasonCodeEntry.system,
-            version: reasonCodeEntry.version,
-            code: reasonCodeEntry.code,
-            display: reasonCodeEntry.display,
-            userSelected: true
-          }
-        ]
-      }
-    ]
+    performedDateTime: dateTime
   };
+
+  // Use reasonReference if Condition ID provided (preferred approach)
+  if (conditionId) {
+    procedure.reasonReference = [
+      {
+        reference: `Condition/${conditionId}`
+      }
+    ];
+  }
+
+  return procedure;
 };
 
 /**
@@ -113,7 +105,7 @@ export const createBMIIntervention = async (
   const dateTime = `${formData.date}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00.000Z`;
 
   // Create the Procedure resource
-  const procedure = createProcedureResource(patientId, formData.interventionType, formData.reasonCode, dateTime);
+  const procedure = createProcedureResource(patientId, formData.interventionType, formData.conditionId, dateTime);
 
   try {
     const result = await fhirClient.createProcedure(procedure);
@@ -149,8 +141,10 @@ export const validateBMIInterventionForm = (formData: Partial<BMIInterventionFor
     errors.push('Intervention type is required');
   }
 
-  if (!formData.reasonCode) {
-    errors.push('Reason code is required');
+  // Condition ID is optional - procedure can exist without reasonReference
+  // But we'll warn if missing
+  if (!formData.conditionId) {
+    console.warn('No Condition ID provided - Procedure will not have reasonReference');
   }
 
   return errors;
