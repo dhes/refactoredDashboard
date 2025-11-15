@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../ui/card';
 import {
-  INTERVENTION_TYPES,
+  PROCEDURE_INTERVENTIONS,
+  SERVICE_REQUEST_INTERVENTIONS,
+  MEDICATION_REQUEST_INTERVENTIONS,
   createBMIIntervention,
   validateBMIInterventionForm,
-  type BMIInterventionFormData
+  type BMIInterventionFormData,
+  type InterventionResourceType
 } from '../../utils/bmiInterventionCreation';
 import { fhirClient } from '../../services/fhirClient';
 import type { Condition } from 'fhir/r4';
@@ -24,7 +27,8 @@ export const CreateBMIInterventionForm: React.FC<CreateBMIInterventionFormProps>
   const [formData, setFormData] = useState<Partial<BMIInterventionFormData>>({
     date: new Date().toISOString().split('T')[0], // Today's date
     time: new Date().toTimeString().slice(0, 5), // Current time
-    interventionType: 'dietary-regime', // Default to only option
+    resourceType: 'procedure', // Default to Procedure
+    interventionCode: '182922004', // Default to dietary regime
     conditionId: undefined
   });
 
@@ -124,19 +128,61 @@ export const CreateBMIInterventionForm: React.FC<CreateBMIInterventionFormProps>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Intervention Type - Currently only one option */}
+          {/* Resource Type Selector */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Intervention Provided <span className="text-red-500">*</span>
+              Intervention Type <span className="text-red-500">*</span>
             </label>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <div className="font-medium">
-                {INTERVENTION_TYPES['dietary-regime'].display}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                SNOMED CT: {INTERVENTION_TYPES['dietary-regime'].code}
-              </div>
-            </div>
+            <select
+              value={formData.resourceType}
+              onChange={(e) => {
+                const resourceType = e.target.value as InterventionResourceType;
+                // Reset intervention code when changing type
+                let defaultCode = '182922004'; // dietary regime
+                if (resourceType === 'service-request') defaultCode = '182922004';
+                else if (resourceType === 'medication-request') defaultCode = '1112982';
+
+                setFormData({ ...formData, resourceType, interventionCode: defaultCode });
+              }}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="procedure">Counseling (Procedure)</option>
+              <option value="service-request">Order/Referral (ServiceRequest)</option>
+              <option value="medication-request">Medication (MedicationRequest)</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Select whether you performed counseling, ordered a referral/service, or prescribed medication
+            </p>
+          </div>
+
+          {/* Intervention Code Selector */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Specific Intervention <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={formData.interventionCode}
+              onChange={(e) => setFormData({ ...formData, interventionCode: e.target.value })}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              {formData.resourceType === 'procedure' && Object.entries(PROCEDURE_INTERVENTIONS).map(([key, intervention]) => (
+                <option key={key} value={intervention.code}>
+                  {intervention.display}
+                </option>
+              ))}
+              {formData.resourceType === 'service-request' && Object.entries(SERVICE_REQUEST_INTERVENTIONS).map(([key, intervention]) => (
+                <option key={key} value={intervention.code}>
+                  {intervention.display}
+                </option>
+              ))}
+              {formData.resourceType === 'medication-request' && Object.entries(MEDICATION_REQUEST_INTERVENTIONS).map(([key, intervention]) => (
+                <option key={key} value={intervention.code}>
+                  {intervention.display}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Condition Reference */}
@@ -234,9 +280,10 @@ export const CreateBMIInterventionForm: React.FC<CreateBMIInterventionFormProps>
         {/* Helpful Information */}
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="text-sm text-blue-800">
-            <strong>💡 Note:</strong> This records that you provided dietary counseling or regime therapy
-            to address the patient's BMI-related diagnosis. The intervention will reference the selected
-            diagnosis from the problem list. This satisfies the CMS69 measure Numerator requirement.
+            <strong>💡 Note:</strong> This records a BMI follow-up intervention to address the patient's
+            BMI-related diagnosis. The intervention will reference the selected diagnosis from the problem list.
+            Choose "Counseling" if you performed the intervention, or "Order/Referral" or "Medication" if you
+            ordered it. This satisfies the CMS69 measure Numerator requirement.
           </div>
         </div>
       </CardContent>
